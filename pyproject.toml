@@ -1,0 +1,10 @@
+[project]
+name = "tpe-sia-2025-tp3"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12.9"
+dependencies = [
+    "matplotlib>=3.10.1",
+    "pyqt6>=6.9.0",
+]
