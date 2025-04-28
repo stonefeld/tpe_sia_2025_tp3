@@ -13,6 +13,7 @@ wheels/
 # Misc
 *.vim
 *.json
+*.mp4
 
 # latex
 *.aux

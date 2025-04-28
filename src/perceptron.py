@@ -1,11 +1,9 @@
 import random as rnd
 
-import matplotlib.pyplot as plt
-
 
 class Perceptron:
     def __init__(self, input_size, tita, learning_rate=0.05):
-        self.weights = [rnd.uniform(0.1, 1) for _ in range(input_size + 1)]  # +1 for bias
+        self.weights = [rnd.uniform(0, 2) for _ in range(input_size + 1)]  # +1 for bias
         self.learning_rate = learning_rate
         self.tita = tita
 
@@ -20,7 +18,7 @@ class Perceptron:
         self.weights = weights.copy()
 
     def train(self, data, labels, epochs=1000) -> dict:
-        timelapse = {}
+        timelapse = {"data": data, "labels": labels, "lapse": {}}
 
         for epoch in range(epochs):
             total_error = 0
@@ -32,9 +30,7 @@ class Perceptron:
                     self.weights[i] += self.learning_rate * delta * xi[i]
                 total_error += abs(delta)
 
-            timelapse[epoch] = {
-                "data": data,
-                "labels": labels,
+            timelapse["lapse"][epoch] = {
                 "weights": self.weights.copy(),
                 "total_error": total_error,
             }
