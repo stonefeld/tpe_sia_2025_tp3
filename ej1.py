@@ -3,7 +3,7 @@ import json
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 
-from src.perceptron import Perceptron
+from src.perceptron import PerceptronSimple
 
 
 def tita(x):
@@ -53,7 +53,7 @@ def main():
     y_and = [-1, -1, -1, 1]
 
     data_and = prepare_data(x_and)
-    pand = Perceptron(input_size=2, tita=tita)
+    pand = PerceptronSimple(input_size=2, tita=tita)
 
     print("\n============== AND ==============")
     timelapse_and = pand.train(data_and, y_and)
@@ -75,7 +75,7 @@ def main():
     y_xor = [1, 1, -1, -1]
 
     data_xor = prepare_data(x_xor)
-    pxor = Perceptron(input_size=2, tita=tita)
+    pxor = PerceptronSimple(input_size=2, tita=tita)
     print("\n============== XOR ==============")
     timelapse_xor = pxor.train(data_xor, y_xor)
     print(f"Entrenamiento completado en la época {len(timelapse_xor['lapse'])}")
