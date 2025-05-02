@@ -47,6 +47,7 @@ def plot_training_error(timelapse_lineal: dict, timelapse_nolineal: dict):
     plt.xlabel("Época")
     plt.ylabel("Error total")
     plt.title("Error total durante el entrenamiento (Lineal vs No Lineal)")
+    plt.legend()
     plt.grid(True)
     plt.tight_layout()
     plt.show()
@@ -64,7 +65,7 @@ def main():
     y = [i / max_y for i in y]
     plineal = PerceptronLineal(input_size=3, learning_rate=0.001)
 
-    timelapse_lineal = plineal.train(data, y)
+    timelapse_lineal = plineal.train(data, y, epochs=10000)
     predictions_lineal = [plineal.predict(xi) for xi in data]
 
     print(f"Entrenamiento completado en la época {len(timelapse_lineal['lapse'])}")
@@ -77,9 +78,9 @@ def main():
         json.dump(timelapse_lineal, f, indent=2)
 
     # NO LINEAL
-    pnolineal = PerceptronNoLineal(input_size=3, learning_rate=0.00001, tita=sigmoid, tita_prime=sigmoid_derivative)
+    pnolineal = PerceptronNoLineal(input_size=3, learning_rate=0.001, tita=sigmoid, tita_prime=sigmoid_derivative)
 
-    timelapse_nolineal = pnolineal.train(data, y, epochs=1000000)
+    timelapse_nolineal = pnolineal.train(data, y, epochs=10000)
     predictions_nolineal = [pnolineal.predict(xi)[0] for xi in data]
 
     plot_prediction_vs_real(data, y, predictions_lineal, predictions_nolineal)
