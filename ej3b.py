@@ -33,12 +33,13 @@ def cargar_digitos_y_etiquetas(path="assets/digitos.txt"):
 def main():
     data, labels = cargar_digitos_y_etiquetas()
 
-    mlp = PerceptronMulticapa(input_size=35, hidden_size=6, tita=tanh, tita_prime=tanh_prime)
+    # Red de 35 entradas, 10 neuronas ocultas, 1 salida
+    mlp = PerceptronMulticapa(capas=[35, 10, 1], tita=tanh, tita_prime=tanh_prime, alpha=0.1)
     mlp.train(data, labels)
 
     for i, x in enumerate(data):
         pred = mlp.predict(x)
-        print(f"Dígito {i} => {'impar' if round(pred) == 1 else 'par'} ({pred:.2f})")
+        print(f"Dígito {i}: {'IMPAR' if pred[0] > 0 else 'PAR'} ({pred[0]:.3f})")
 
 
 if __name__ == "__main__":

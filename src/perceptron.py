@@ -1,5 +1,7 @@
 import random as rnd
 
+import numpy as np
+
 
 class PerceptronSimple:
     def __init__(self, input_size, tita, learning_rate=0.05):
@@ -107,72 +109,71 @@ class PerceptronNoLineal:
 
 
 class PerceptronMulticapa:
-    def __init__(self, input_size, hidden_size, tita, tita_prime, learning_rate=0.1):
-        self.learning_rate = learning_rate
+    def __init__(self, capas, tita, tita_prime, alpha=0.1):
+        self.capas = capas  # lista de tamaños de capas [input, hidden1, ..., output]
+        self.alpha = alpha
         self.tita = tita
         self.tita_prime = tita_prime
+        self.pesos = []  # pesos[i] conecta capas[i] -> capas[i+1]
 
-        # Pesos capa entrada -> oculta (bias incluido)
-        self.w_input_hidden = [[rnd.uniform(-1, 1) for _ in range(input_size + 1)] for _ in range(hidden_size)]
+        # Inicialización aleatoria de los pesos (incluyendo bias)
+        for i in range(len(capas) - 1):
+            filas = capas[i + 1]
+            columnas = capas[i] + 1  # +1 por bias
+            self.pesos.append([[rnd.uniform(-1, 1) for _ in range(columnas)] for _ in range(filas)])
 
-        # Pesos capa oculta -> salida (bias incluido)
-        self.w_hidden_output = [rnd.uniform(-1, 1) for _ in range(hidden_size + 1)]
+    def forward(self, x):
+        entrada = x[:]
+        activaciones = [entrada]
 
-    def _forward(self, x):
-        x = [1] + x  # bias input
+        for w in self.pesos:
+            entrada = [1] + entrada  # bias
+            salida = []
+            for neurona in w:
+                h = sum(wij * xi for wij, xi in zip(neurona, entrada))
+                salida.append(self.tita(h))
+            activaciones.append(salida)
+            entrada = salida
+        return activaciones
 
-        # Capa oculta
-        hidden_net = [sum(w * xi for w, xi in zip(weights, x)) for weights in self.w_input_hidden]
-        hidden_out = [self.tita(h) for h in hidden_net]
-        hidden_out_with_bias = [1] + hidden_out  # bias hidden
+    def backward(self, activaciones, y):
+        deltas = [None] * len(self.pesos)
+        salida = activaciones[-1]
+        error = np.subtract(y, salida)
 
-        # Capa salida
-        output_net = sum(w * ho for w, ho in zip(self.w_hidden_output, hidden_out_with_bias))
-        output_out = self.tita(output_net)
+        # Delta de la capa de salida
+        deltas[-1] = [e * self.tita_prime(s) for e, s in zip(error, salida)]
 
-        return {
-            "input": x,
-            "hidden_net": hidden_net,
-            "hidden_out": hidden_out,
-            "hidden_out_with_bias": hidden_out_with_bias,
-            "output_net": output_net,
-            "output_out": output_out,
-        }
+        # Delta de las capas ocultas
+        for le in reversed(range(len(deltas) - 1)):
+            capa = activaciones[le + 1]
+            siguiente_delta = deltas[le + 1]
+            siguiente_pesos = self.pesos[le + 1]
 
-    def predict(self, x):
-        return self._forward(x)["output_out"]
+            deltas[le] = []
+            for i in range(len(capa)):
+                error_oculto = sum(siguiente_delta[k] * siguiente_pesos[k][i + 1] for k in range(len(siguiente_delta)))
+                deltas[le].append(error_oculto * self.tita_prime(capa[i]))
 
-    def train(self, data, labels, epochs=10000):
-        history = []
+        # Actualización de pesos
+        for le in range(len(self.pesos)):
+            entrada = [1] + activaciones[le]
+            for j in range(len(self.pesos[le])):
+                for i in range(len(self.pesos[le][j])):
+                    self.pesos[le][j][i] += self.alpha * deltas[le][j] * entrada[i]
 
-        for epoch in range(epochs):
-            total_error = 0
-
-            for x, y_true in zip(data, labels):
-                fwd = self._forward(x)
-                y_pred = fwd["output_out"]
-                error = y_true - y_pred
-                total_error += error**2
-
-                # Gradiente salida
-                delta_out = error * self.tita_prime(fwd["output_net"])
-
-                # Gradiente oculta
-                delta_hidden = [
-                    delta_out * self.w_hidden_output[i + 1] * self.tita_prime(fwd["hidden_net"][i]) for i in range(len(fwd["hidden_net"]))
-                ]
-
-                # Actualizar pesos salida
-                for i in range(len(self.w_hidden_output)):
-                    self.w_hidden_output[i] += self.learning_rate * delta_out * fwd["hidden_out_with_bias"][i]
-
-                # Actualizar pesos entrada -> oculta
-                for j in range(len(self.w_input_hidden)):
-                    for i in range(len(self.w_input_hidden[j])):
-                        self.w_input_hidden[j][i] += self.learning_rate * delta_hidden[j] * fwd["input"][i]
-
-            history.append(total_error)
-            if total_error < 1e-3:
+    def train(self, datos, salidas, epocas=10000, tolerancia=0.01):
+        for epoca in range(epocas):
+            error_total = 0
+            for x, y in zip(datos, salidas):
+                y = y if isinstance(y, list) else [y]
+                activaciones = self.forward(x)
+                self.backward(activaciones, y)
+                error_total += sum((yi - ai) ** 2 for yi, ai in zip(y, activaciones[-1])) / len(y)
+            error_promedio = error_total / len(datos)
+            if error_promedio < tolerancia:
+                print(f"Convergió en la época {epoca} con error {error_promedio}")
                 break
 
-        return history
+    def predict(self, x):
+        return self.forward(x)[-1]
