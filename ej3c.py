@@ -1,6 +1,8 @@
-import copy
 import math
-import random
+import os
+import re
+
+from PIL import Image
 
 from src.perceptron import PerceptronMulticapa
 
@@ -13,23 +15,44 @@ def tanh_prime(h):
     return 1 - math.tanh(h) ** 2
 
 
-def cargar_digitos_y_etiquetas(path="assets/digitos.txt"):
-    with open(path) as f:
-        lines = [list(map(int, line.strip().split())) for line in f if line.strip()]
+def cargar_imagen_como_vector(path_imagen):
+    with Image.open(path_imagen) as img:
+        img = img.convert("L")  # escala de grises
+        # img = img.resize((5, 7))  # redimensionamos a 5x7 si no está ya
 
-    # Cada dígito tiene 7 filas, 10 dígitos en total
-    digitos = []
-    for i in range(0, len(lines), 7):
-        right = i + 7
-        bloque = lines[i:right]  # 7 filas
-        flatten = [bit for fila in bloque for bit in fila]
-        digitos.append(flatten)
+        pixeles = list(img.getdata())
+        # Convertimos a binario: 0 para oscuro, 1 para claro (o invertí si querés)
+        binarizado = [1 if p < 128 else 0 for p in pixeles]
 
+        return binarizado
+
+
+def cargar_imagenes_y_etiquetas(carpeta):
+    imagenes = []
     etiquetas = []
-    for i in range(10):
-        etiquetas.append(1 if i % 2 == 1 else -1)
 
-    return digitos, etiquetas
+    archivos = [f for f in os.listdir(carpeta) if f.endswith(".png")]
+    archivos.sort()  # para que el orden sea estable
+
+    patron = re.compile(r"imagen_(\d+)_\w+\.png")  # coincide con imagen_3_1.png, imagen_7_b.png, etc.
+
+    for archivo in archivos:
+        path = os.path.join(carpeta, archivo)
+        vector = cargar_imagen_como_vector(path)
+
+        match = patron.match(archivo)
+        if not match:
+            print(f"Archivo ignorado por formato no válido: {archivo}")
+            continue
+
+        numero = int(match.group(1))
+        etiqueta = [-1] * 10
+        etiqueta[numero] = 1
+
+        imagenes.append(vector)
+        etiquetas.append(etiqueta)
+
+    return imagenes, etiquetas
 
 
 def etiquetas_one_hot():
@@ -41,35 +64,27 @@ def etiquetas_one_hot():
     return etiquetas
 
 
-def agregar_ruido(patron, probabilidad=0.1):
-    ruidoso = copy.deepcopy(patron)
-    for i in range(len(ruidoso)):
-        if random.random() < probabilidad:
-            ruidoso[i] = 1 - ruidoso[i]  # invierte el bit
-    return ruidoso
-
-
 def main():
-    data, labels = cargar_digitos_y_etiquetas()
-    labels_onehot = etiquetas_one_hot()
+    data, labels = cargar_imagenes_y_etiquetas("assets/numeros")
 
-    # Red: 35 entradas, 20 ocultas, 10 salida
-    mlp = PerceptronMulticapa([35, 20, 10], alpha=0.1, tita=tanh, tita_prime=tanh_prime)
+    input_size = len(data[0])
+    mlp = PerceptronMulticapa([input_size, 40, 10], alpha=0.1, tita=tanh, tita_prime=tanh_prime)
 
-    # Entrenamiento
-    mlp.train(data, labels_onehot)
+    print("Entrenando con múltiples imágenes por dígito...")
+    mlp.train(data, labels)
 
-    for i, x in enumerate(data):
+    # ahora cargamos de `assets/numeros_test` el archivo `imagen_8.png` y vemos qué predice
+    test_data, test_labels = cargar_imagenes_y_etiquetas("assets/numeros_tests")
+    print("\nResultados sobre el conjunto de test:")
+    for i, x in enumerate(test_data):
         salida = mlp.forward(x)[-1]
         pred = salida.index(max(salida))
-        print(f"Esperado: {i}, Predicho: {pred}")
-
-    print("Con ruido:")
-    for i, x in enumerate(data):
-        x_ruidoso = agregar_ruido(x, 0.1)
-        salida = mlp.forward(x_ruidoso)[-1]
-        pred = salida.index(max(salida))
-        print(f"Esperado: {i}, Predicho: {pred}")
+        esperado = test_labels[i].index(1)
+        print(f"Imagen {i}: Esperado: {esperado}, Predicho: {pred}", end="")
+        if pred == esperado:
+            print(" ✅")
+        else:
+            print(" ❌")
 
 
 if __name__ == "__main__":
