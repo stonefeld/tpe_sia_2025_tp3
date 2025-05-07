@@ -2,10 +2,14 @@ import csv
 import math
 import random
 
+import numpy as np
+
 from src.perceptron import PerceptronNoLineal
 
 
 def k_fold_cross_validation_nolineal(data, labels, k, tita, tita_prime, learning_rate=0.01, epochs=1000):
+    data = np.array(data)
+    labels = np.array(labels)
     combined = list(zip(data, labels))
     random.shuffle(combined)
 
@@ -28,10 +32,10 @@ def k_fold_cross_validation_nolineal(data, labels, k, tita, tita_prime, learning
 
         # Evaluar en test
         test_predictions = [p.predict(xi)[0] for xi in x_test]
-        fold_error = sum(abs(yi - y_hat) for yi, y_hat in zip(y_test, test_predictions)) / len(y_test)
+        fold_error = np.mean(np.abs(np.array(y_test) - np.array(test_predictions)))
         fold_errors.append(fold_error)
 
-    avg_error = sum(fold_errors) / len(fold_errors)
+    avg_error = np.mean(fold_errors)
     return avg_error, fold_errors
 
 
@@ -45,7 +49,7 @@ def sigmoid_derivative(x, beta=1):
 
 
 def prepare_data(raw_x):
-    return [[1] + list(row) for row in raw_x]
+    return np.array([[1] + list(row) for row in raw_x])
 
 
 def main():
@@ -58,12 +62,18 @@ def main():
     data = prepare_data(x)
     max_y = max(abs(i) for i in y)
 
-    y = [i / max_y for i in y]
+    y = np.array([i / max_y for i in y])
     avg_error, fold_errors = k_fold_cross_validation_nolineal(
-        data, y, k=5, tita=sigmoid, tita_prime=sigmoid_derivative, learning_rate=0.00001, epochs=100000
+        data,
+        y,
+        k=5,
+        tita=sigmoid,
+        tita_prime=sigmoid_derivative,
+        learning_rate=0.001,
+        epochs=10000,
     )
 
-    print("\n====== VALIDACIÓN CRUZADA (No Lineal) ======")
+    print("====== VALIDACIÓN CRUZADA (No Lineal) ======")
     for i, err in enumerate(fold_errors):
         print(f"Fold {i+1}: Error promedio = {err:.4f}")
     print(f"Error promedio total (generalización): {avg_error:.4f}")

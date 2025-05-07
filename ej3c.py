@@ -2,6 +2,7 @@ import math
 import os
 import re
 
+import numpy as np
 from PIL import Image
 
 from src.perceptron import PerceptronMulticapa
@@ -18,12 +19,9 @@ def tanh_prime(salida):
 def cargar_imagen_como_vector(path_imagen):
     with Image.open(path_imagen) as img:
         img = img.convert("L")  # escala de grises
-        # img = img.resize((5, 7))  # redimensionamos a 5x7 si no está ya
-
-        pixeles = list(img.getdata())
-        # Convertimos a binario: 0 para oscuro, 1 para claro (o invertí si querés)
-        binarizado = [1 if p < 128 else 0 for p in pixeles]
-
+        pixeles = np.array(img.getdata())
+        # Convertimos a binario: 0 para oscuro, 1 para claro
+        binarizado = np.where(pixeles < 128, 1, 0)
         return binarizado
 
 
@@ -58,37 +56,43 @@ def cargar_imagenes_y_etiquetas(carpeta):
             continue
 
         numero = int(match.group(1))
-        etiqueta = [-1] * num_outputs
+        etiqueta = np.full(num_outputs, -1)
         etiqueta[numero - min_numero] = 1  # Adjust index based on min_numero
 
         imagenes.append(vector)
         etiquetas.append(etiqueta)
 
-    return imagenes, etiquetas, num_outputs
+    return np.array(imagenes), np.array(etiquetas), num_outputs
 
 
 def main():
     data, labels, num_outputs = cargar_imagenes_y_etiquetas("assets/numeros")
 
     input_size = len(data[0])
-    mlp = PerceptronMulticapa([input_size, 15, num_outputs], alpha=0.1, tita=tanh, tita_prime=tanh_prime)
+    mlp = PerceptronMulticapa([input_size, 20, num_outputs], alpha=0.03, tita=tanh, tita_prime=tanh_prime)
 
     print("Entrenando con múltiples imágenes por dígito...")
-    mlp.train(data, labels, epocas=1000, tolerancia=0.005)
+    mlp.train(data, labels, epocas=10000, tolerancia=0.001)
 
     # ahora cargamos de `assets/numeros_test` el archivo `imagen_8.png` y vemos qué predice
     test_data, test_labels, _ = cargar_imagenes_y_etiquetas("assets/numeros_tests")
+    correctos = 0
+
     print("\nResultados sobre el conjunto de test:")
     for i, x in enumerate(test_data):
         salida = mlp.forward(x)[-1]
-        pred = salida.index(max(salida))
-        esperado = test_labels[i].index(1)
-        print(f"Imagen {i}: Esperado: {esperado}, Predicho: {pred}", end="")
-        if pred == esperado:
+        predicho = np.argmax(salida)
+        esperado = np.argmax(test_labels[i])
+        print(f"Imagen {i}: Esperado: {esperado}, Predicho: {predicho}", end="")
+        if predicho == esperado:
+            correctos += 1
             print(" ✅")
         else:
             print(" ❌")
         print(f"\tSalida: [{', '.join(f'{s:8.5f}' for s in salida)}]")
+
+    print(f"\nTotal de imágenes correctas: {correctos}/{len(test_data)}")
+    print(f"Porcentaje de aciertos: {correctos/len(test_data)*100:.2f}%")
 
 
 if __name__ == "__main__":

@@ -1,36 +1,32 @@
-import math
-import random as rnd
-
 import numpy as np
 
 
 class PerceptronSimple:
     def __init__(self, input_size, tita, learning_rate=0.05):
-        self.weights = [rnd.uniform(0, 1) for _ in range(input_size + 1)]  # +1 for bias
+        self.weights = np.random.uniform(0, 1, input_size + 1)  # +1 for bias
         self.learning_rate = learning_rate
         self.tita = tita
 
     def predict(self, x):
-        h = sum(self.weights[i] * x[i] for i in range(len(self.weights)))
+        h = np.dot(self.weights, x)
         return self.tita(h)
 
     def train(self, data, labels, epochs=1000) -> dict:
-        timelapse = {"data": data, "labels": labels, "lapse": {}}
+        data = np.array(data)
+        labels = np.array(labels)
+        timelapse = {"data": data.tolist(), "labels": labels.tolist(), "lapse": {}}
 
         for epoch in range(epochs):
             total_error = 0
             for xi, yi in zip(data, labels):
                 y_hat = self.predict(xi)
                 delta = yi - y_hat
-
-                for i in range(len(self.weights)):
-                    self.weights[i] += self.learning_rate * delta * xi[i]
-
+                self.weights += self.learning_rate * delta * xi
                 total_error += abs(delta)
 
             timelapse["lapse"][epoch] = {
-                "weights": self.weights.copy(),
-                "total_error": total_error,
+                "weights": self.weights.tolist(),
+                "total_error": float(total_error),
             }
 
             if total_error == 0:
@@ -41,28 +37,28 @@ class PerceptronSimple:
 
 class PerceptronLineal:
     def __init__(self, input_size, learning_rate=0.05):
-        self.weights = [rnd.uniform(0, 1) for _ in range(input_size + 1)]
+        self.weights = np.random.uniform(0, 1, input_size + 1)
         self.learning_rate = learning_rate
 
     def predict(self, x):
-        return sum(self.weights[i] * x[i] for i in range(len(self.weights)))  # sin activación
+        return np.dot(self.weights, x)  # sin activación
 
     def train(self, data, labels, epochs=1000):
-        timelapse = {"data": data, "labels": labels, "lapse": {}}
+        data = np.array(data)
+        labels = np.array(labels)
+        timelapse = {"data": data.tolist(), "labels": labels.tolist(), "lapse": {}}
 
         for epoch in range(epochs):
             total_error = 0
             for xi, yi in zip(data, labels):
                 y_hat = self.predict(xi)
                 delta = yi - y_hat
-                for i in range(len(self.weights)):
-                    self.weights[i] += self.learning_rate * delta * xi[i]
-
+                self.weights += self.learning_rate * delta * xi
                 total_error += abs(delta)
 
             timelapse["lapse"][epoch] = {
-                "weights": self.weights.copy(),
-                "total_error": total_error,
+                "weights": self.weights.tolist(),
+                "total_error": float(total_error),
             }
 
             if total_error < 1e-3:  # tolerancia para error continuo
@@ -73,30 +69,31 @@ class PerceptronLineal:
 
 class PerceptronNoLineal:
     def __init__(self, input_size, tita, tita_prime, learning_rate=0.05):
-        self.weights = [rnd.uniform(0, 1) for _ in range(input_size + 1)]
+        self.weights = np.random.uniform(0, 1, input_size + 1)
         self.learning_rate = learning_rate
         self.tita = tita
         self.tita_prime = tita_prime
 
     def predict(self, x):
-        h = sum(self.weights[i] * x[i] for i in range(len(self.weights)))
+        h = np.dot(self.weights, x)
         return self.tita(h), self.tita_prime(h)
 
     def train(self, data, labels, epochs=1000):
-        timelapse = {"data": data, "labels": labels, "lapse": {}}
+        data = np.array(data)
+        labels = np.array(labels)
+        timelapse = {"data": data.tolist(), "labels": labels.tolist(), "lapse": {}}
 
         for epoch in range(epochs):
             total_error = 0
             for xi, yi in zip(data, labels):
                 y_hat, y_hat_prime = self.predict(xi)
                 delta = yi - y_hat
-                for i in range(len(self.weights)):
-                    self.weights[i] += self.learning_rate * delta * y_hat_prime * xi[i]
+                self.weights += self.learning_rate * delta * y_hat_prime * xi
                 total_error += abs(delta)
 
             timelapse["lapse"][epoch] = {
-                "weights": self.weights.copy(),
-                "total_error": total_error,
+                "weights": self.weights.tolist(),
+                "total_error": float(total_error),
             }
 
             if total_error < 1e-3:
@@ -116,20 +113,17 @@ class PerceptronMulticapa:
         # Inicialización aleatoria de los pesos (incluyendo bias)
         for i in range(len(capas) - 1):
             neuronas = capas[i + 1]
-            entradas = capas[i] + 1  # +1 por bias | la cantidad de entradas es la cantidad de neuronas de la capa anterior + 1
-            self.weights.append([[rnd.uniform(-1, 1) for _ in range(entradas)] for _ in range(neuronas)])
+            entradas = capas[i] + 1  # +1 por bias
+            self.weights.append(np.random.uniform(-1, 1, (neuronas, entradas)))
 
     def forward(self, x):
-        entrada = x[:]
+        entrada = np.array(x)
         activaciones = [entrada]
 
         for capa in self.weights:
-            entrada = [1] + entrada  # bias
-            salida = []
-            for neurona in capa:
-                h = sum(w * x for w, x in zip(neurona, entrada))
-                salida.append(self.tita(h))
-
+            entrada = np.concatenate(([1], entrada))  # bias
+            h = np.dot(capa, entrada)
+            salida = np.array([self.tita(h_i) for h_i in h])
             activaciones.append(salida)
             entrada = salida
 
@@ -138,40 +132,39 @@ class PerceptronMulticapa:
     def backward(self, activaciones, y):
         deltas = [None] * len(self.weights)
         salida = activaciones[-1]
-        error = np.subtract(y, salida)
+        error = np.array(y) - salida
 
         # Delta de la capa de salida
-        deltas[-1] = [e * self.tita_prime(s) for e, s in zip(error, salida)]
+        deltas[-1] = error * np.array([self.tita_prime(s) for s in salida])
 
         # Delta de las capas ocultas
         for i in reversed(range(len(deltas) - 1)):
             j = i + 1
-
             capa = activaciones[j]
             siguiente_delta = deltas[j]
             siguiente_pesos = self.weights[j]
 
-            deltas[i] = []
-            for neurona in range(len(capa)):
-                error_oculto = sum(siguiente_delta[k] * siguiente_pesos[k][neurona + 1] for k in range(len(siguiente_delta)))
-                deltas[i].append(error_oculto * self.tita_prime(capa[neurona]))
+            error_oculto = np.dot(siguiente_delta, siguiente_pesos[:, 1:])
+            deltas[i] = error_oculto * np.array([self.tita_prime(s) for s in capa])
 
         # Actualización de pesos
         for i in range(len(self.weights)):
-            entrada = [1] + activaciones[i]
+            entrada = np.concatenate(([1], activaciones[i]))
             for j in range(len(self.weights[i])):
-                for neurona in range(len(self.weights[i][j])):
-                    self.weights[i][j][neurona] += self.alpha * deltas[i][j] * entrada[neurona]
+                self.weights[i][j] += self.alpha * deltas[i][j] * entrada
 
     def train(self, datos, salidas, epocas=1000, tolerancia=0.01):
+        datos = np.array(datos)
+        salidas = np.array(salidas)
+
         for epoca in range(epocas):
             print(f"Época {epoca + 1}/{epocas}...", end=" ")
+
             error_total = 0
             for x, y in zip(datos, salidas):
-                y = y if isinstance(y, list) else [y]
                 activaciones = self.forward(x)
                 self.backward(activaciones, y)
-                error_total += sum((yi - ai) ** 2 for yi, ai in zip(y, activaciones[-1])) / (2 * len(y))
+                error_total += np.sum((y - activaciones[-1]) ** 2) / (2 * y.size)
 
             error_promedio = error_total / len(datos)
             if error_promedio < tolerancia:

@@ -2,6 +2,7 @@ import json
 
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
+import numpy as np
 
 from src.perceptron import PerceptronSimple
 
@@ -49,8 +50,8 @@ def plot_timelapse(timelapse: dict, filename: str):
 
 def main():
     # AND problem
-    x_and = [[-1, 1], [1, -1], [-1, -1], [1, 1]]
-    y_and = [-1, -1, -1, 1]
+    x_and = np.array([[-1, 1], [1, -1], [-1, -1], [1, 1]])
+    y_and = np.array([-1, -1, -1, 1])
 
     data_and = prepare_data(x_and)
     pand = PerceptronSimple(input_size=2, tita=tita)
@@ -71,8 +72,8 @@ def main():
 
     # ==========================
     # XOR problem
-    x_xor = [[-1, 1], [1, -1], [-1, -1], [1, 1]]
-    y_xor = [1, 1, -1, -1]
+    x_xor = np.array([[-1, 1], [1, -1], [-1, -1], [1, 1]])
+    y_xor = np.array([1, 1, -1, -1])
 
     data_xor = prepare_data(x_xor)
     pxor = PerceptronSimple(input_size=2, tita=tita)

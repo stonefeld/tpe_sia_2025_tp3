@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 from src.perceptron import PerceptronMulticapa
 
@@ -23,11 +24,8 @@ def cargar_digitos_y_etiquetas(path="assets/digitos.txt"):
         flatten = [bit for fila in bloque for bit in fila]
         digitos.append(flatten)
 
-    etiquetas = []
-    for i in range(10):
-        etiquetas.append(1 if i % 2 == 1 else -1)
-
-    return digitos, etiquetas
+    etiquetas = np.array([1 if i % 2 == 1 else -1 for i in range(10)])
+    return np.array(digitos), etiquetas
 
 
 def main():

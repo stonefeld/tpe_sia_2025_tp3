@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 from src.perceptron import PerceptronMulticapa
 
@@ -12,17 +13,17 @@ def tanh_prime(h):
 
 
 def main():
-    xor_data = [[-1, -1], [-1, 1], [1, -1], [1, 1]]
-    xor_labels = [-1, 1, 1, -1]
+    xor_data = np.array([[-1, -1], [-1, 1], [1, -1], [1, 1]])
+    xor_labels = np.array([-1, 1, 1, -1])
 
     mlp = PerceptronMulticapa(capas=[2, 2, 1], tita=tanh, tita_prime=tanh_prime, alpha=0.1)
     mlp.train(xor_data, xor_labels, epocas=1000, tolerancia=0.005)
 
     print("\nResultados sobre el conjunto de entrenamiento:")
-    for x in xor_data:
+    for i, x in enumerate(xor_data):
         salida = mlp.predict(x)
         predicho = round(salida[0])
-        esperado = xor_labels[xor_data.index(x)]
+        esperado = xor_labels[i]
         print(f"Input: [{', '.join(f'{i:>2}' for i in x)}] => Predicho: {predicho:>2}, Esperado: {esperado:>2}", end="")
         if predicho == esperado:
             print(" ✅")
