@@ -180,5 +180,5 @@ class PerceptronMulticapa:
 
             print(f"Error promedio: {error_promedio}")
 
-    def predict(self, x):
+    def predict(self, x: list[float]) -> list[float]:
         return self.forward(x)[-1]

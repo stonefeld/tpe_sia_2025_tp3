@@ -35,11 +35,19 @@ def main():
 
     # Red de 35 entradas, 10 neuronas ocultas, 1 salida
     mlp = PerceptronMulticapa(capas=[35, 10, 1], tita=tanh, tita_prime=tanh_prime, alpha=0.1)
-    mlp.train(data, labels)
+    mlp.train(data, labels, epocas=1000, tolerancia=0.005)
 
     for i, x in enumerate(data):
-        pred = mlp.predict(x)
-        print(f"Dígito {i}: {'IMPAR' if pred[0] > 0 else 'PAR'} ({pred[0]:.3f})")
+        salida = mlp.predict(x)
+        predicho = round(salida[0])
+        paridad = "IMPAR" if predicho > 0 else "PAR"
+        esperado = labels[i]
+        print(f"Dígito {i}: Predicho: {predicho:>2}, Esperado: {esperado:>2}, Paridad: {paridad}", end="")
+        if predicho == esperado:
+            print(" ✅")
+        else:
+            print(" ❌")
+        print(f"\tSalida: {salida[0]:8.5f}")
 
 
 if __name__ == "__main__":
