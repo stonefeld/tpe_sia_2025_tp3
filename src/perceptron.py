@@ -1,3 +1,4 @@
+import math
 import random as rnd
 
 import numpy as np
@@ -10,14 +11,8 @@ class PerceptronSimple:
         self.tita = tita
 
     def predict(self, x):
-        # x must already include the bias term (x0 = 1)
         h = sum(self.weights[i] * x[i] for i in range(len(self.weights)))
         return self.tita(h)
-
-    def set_weights(self, weights):
-        if len(weights) != len(self.weights):
-            raise ValueError("Los pesos enviados no tienen la longitud correspondiente")
-        self.weights = weights.copy()
 
     def train(self, data, labels, epochs=1000) -> dict:
         timelapse = {"data": data, "labels": labels, "lapse": {}}
@@ -30,6 +25,7 @@ class PerceptronSimple:
 
                 for i in range(len(self.weights)):
                     self.weights[i] += self.learning_rate * delta * xi[i]
+
                 total_error += abs(delta)
 
             timelapse["lapse"][epoch] = {
@@ -61,6 +57,7 @@ class PerceptronLineal:
                 delta = yi - y_hat
                 for i in range(len(self.weights)):
                     self.weights[i] += self.learning_rate * delta * xi[i]
+
                 total_error += abs(delta)
 
             timelapse["lapse"][epoch] = {
@@ -114,30 +111,32 @@ class PerceptronMulticapa:
         self.alpha = alpha
         self.tita = tita
         self.tita_prime = tita_prime
-        self.pesos = []  # pesos[i] conecta capas[i] -> capas[i+1]
+        self.weights = []  # pesos[i] conecta capas[i] -> capas[i+1]
 
         # Inicialización aleatoria de los pesos (incluyendo bias)
         for i in range(len(capas) - 1):
-            filas = capas[i + 1]
-            columnas = capas[i] + 1  # +1 por bias
-            self.pesos.append([[rnd.uniform(-1, 1) for _ in range(columnas)] for _ in range(filas)])
+            neuronas = capas[i + 1]
+            entradas = capas[i] + 1  # +1 por bias | la cantidad de entradas es la cantidad de neuronas de la capa anterior + 1
+            self.weights.append([[rnd.uniform(-1, 1) for _ in range(entradas)] for _ in range(neuronas)])
 
     def forward(self, x):
         entrada = x[:]
         activaciones = [entrada]
 
-        for w in self.pesos:
+        for capa in self.weights:
             entrada = [1] + entrada  # bias
             salida = []
-            for neurona in w:
-                h = sum(wij * xi for wij, xi in zip(neurona, entrada))
+            for neurona in capa:
+                h = sum(w * x for w, x in zip(neurona, entrada))
                 salida.append(self.tita(h))
+
             activaciones.append(salida)
             entrada = salida
+
         return activaciones
 
     def backward(self, activaciones, y):
-        deltas = [None] * len(self.pesos)
+        deltas = [None] * len(self.weights)
         salida = activaciones[-1]
         error = np.subtract(y, salida)
 
@@ -145,35 +144,41 @@ class PerceptronMulticapa:
         deltas[-1] = [e * self.tita_prime(s) for e, s in zip(error, salida)]
 
         # Delta de las capas ocultas
-        for le in reversed(range(len(deltas) - 1)):
-            capa = activaciones[le + 1]
-            siguiente_delta = deltas[le + 1]
-            siguiente_pesos = self.pesos[le + 1]
+        for i in reversed(range(len(deltas) - 1)):
+            j = i + 1
 
-            deltas[le] = []
-            for i in range(len(capa)):
-                error_oculto = sum(siguiente_delta[k] * siguiente_pesos[k][i + 1] for k in range(len(siguiente_delta)))
-                deltas[le].append(error_oculto * self.tita_prime(capa[i]))
+            capa = activaciones[j]
+            siguiente_delta = deltas[j]
+            siguiente_pesos = self.weights[j]
+
+            deltas[i] = []
+            for neurona in range(len(capa)):
+                error_oculto = sum(siguiente_delta[k] * siguiente_pesos[k][neurona + 1] for k in range(len(siguiente_delta)))
+                deltas[i].append(error_oculto * self.tita_prime(capa[neurona]))
 
         # Actualización de pesos
-        for le in range(len(self.pesos)):
-            entrada = [1] + activaciones[le]
-            for j in range(len(self.pesos[le])):
-                for i in range(len(self.pesos[le][j])):
-                    self.pesos[le][j][i] += self.alpha * deltas[le][j] * entrada[i]
+        for i in range(len(self.weights)):
+            entrada = [1] + activaciones[i]
+            for j in range(len(self.weights[i])):
+                for neurona in range(len(self.weights[i][j])):
+                    self.weights[i][j][neurona] += self.alpha * deltas[i][j] * entrada[neurona]
 
-    def train(self, datos, salidas, epocas=10000, tolerancia=0.01):
+    def train(self, datos, salidas, epocas=1000, tolerancia=0.01):
         for epoca in range(epocas):
+            print(f"Época {epoca + 1}/{epocas}...", end=" ")
             error_total = 0
             for x, y in zip(datos, salidas):
                 y = y if isinstance(y, list) else [y]
                 activaciones = self.forward(x)
                 self.backward(activaciones, y)
-                error_total += sum((yi - ai) ** 2 for yi, ai in zip(y, activaciones[-1])) / len(y)
+                error_total += sum((yi - ai) ** 2 for yi, ai in zip(y, activaciones[-1])) / (2 * len(y))
+
             error_promedio = error_total / len(datos)
             if error_promedio < tolerancia:
                 print(f"Convergió en la época {epoca} con error {error_promedio}")
                 break
+
+            print(f"Error promedio: {error_promedio}")
 
     def predict(self, x):
         return self.forward(x)[-1]

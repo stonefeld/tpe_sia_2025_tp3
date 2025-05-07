@@ -15,11 +15,6 @@ def main():
     xor_data = [[-1, -1], [-1, 1], [1, -1], [1, 1]]
     xor_labels = [-1, 1, 1, -1]
 
-    # mlp = PerceptronMulticapa(input_size=2, hidden_size=2, tita=tanh, tita_prime=tanh_prime)
-    # mlp.train(xor_data, xor_labels)
-    # mlp = PerceptronMulticapa(capas=[35, 10, 1], tita=tanh, tita_prime=tanh_prime, alpha=0.1)
-    # mlp.train(data, labels)
-
     mlp = PerceptronMulticapa(capas=[2, 2, 1], tita=tanh, tita_prime=tanh_prime, alpha=0.1)
     mlp.train(xor_data, xor_labels)
 
