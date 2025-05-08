@@ -66,16 +66,16 @@ def cargar_imagenes_y_etiquetas(carpeta):
 
 
 def main():
-    data, labels, num_outputs = cargar_imagenes_y_etiquetas("assets/numeros")
+    data, labels, num_outputs = cargar_imagenes_y_etiquetas("assets/training_set")
 
     input_size = len(data[0])
-    mlp = PerceptronMulticapa([input_size, 20, num_outputs], alpha=0.03, tita=tanh, tita_prime=tanh_prime)
+    mlp = PerceptronMulticapa([input_size, 10, 5, num_outputs], alpha=0.01, tita=tanh, tita_prime=tanh_prime)
 
     print("Entrenando con múltiples imágenes por dígito...")
     mlp.train(data, labels, epocas=10000, tolerancia=0.001)
 
     # ahora cargamos de `assets/numeros_test` el archivo `imagen_8.png` y vemos qué predice
-    test_data, test_labels, _ = cargar_imagenes_y_etiquetas("assets/numeros_tests")
+    test_data, test_labels, _ = cargar_imagenes_y_etiquetas("assets/testing_set")
     correctos = 0
 
     print("\nResultados sobre el conjunto de test:")

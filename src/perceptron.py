@@ -144,7 +144,7 @@ class PerceptronMulticapa:
             siguiente_delta = deltas[j]
             siguiente_pesos = self.weights[j]
 
-            error_oculto = np.dot(siguiente_delta, siguiente_pesos[:, 1:])
+            error_oculto = np.dot(siguiente_delta, siguiente_pesos[:, :-1])
             deltas[i] = error_oculto * np.array([self.tita_prime(s) for s in capa])
 
         # Actualización de pesos
