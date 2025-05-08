@@ -65,10 +65,10 @@ def main():
         y_hat = pand.predict(xi)
         print(f"- Input: ({xi[1]:>2}, {xi[2]:>2}) -> Predicción: {y_hat:>2}, Esperado: {yi:>2}")
 
-    with open("timelapse_and.json", "w") as f:
+    with open("timelapse_ej1_and.json", "w") as f:
         json.dump(timelapse_and, f, indent=2)
 
-    plot_timelapse(timelapse_and, "timelapse_and.mp4")
+    plot_timelapse(timelapse_and, "timelapse_ej1_and.mp4")
 
     # ==========================
     # XOR problem
@@ -86,10 +86,10 @@ def main():
         y_hat = pxor.predict(xi)
         print(f"- Input: ({xi[1]:>2}, {xi[2]:>2}) -> Predicción: {y_hat:>2}, Esperado: {yi:>2}")
 
-    with open("timelapse_xor.json", "w") as f:
+    with open("timelapse_ej1_xor.json", "w") as f:
         json.dump(timelapse_xor, f, indent=2)
 
-    plot_timelapse(timelapse_xor, "timelapse_xor.mp4")
+    plot_timelapse(timelapse_xor, "timelapse_ej1_xor.mp4")
 
 
 if __name__ == "__main__":

@@ -37,7 +37,7 @@ class PerceptronSimple:
 
 class PerceptronLineal:
     def __init__(self, input_size, learning_rate=0.05):
-        self.weights = np.random.uniform(0, 1, input_size + 1)
+        self.weights = np.random.normal(0, np.sqrt(2.0 / (input_size + 1)), input_size + 1)
         self.learning_rate = learning_rate
 
     def predict(self, x):
@@ -54,14 +54,16 @@ class PerceptronLineal:
                 y_hat = self.predict(xi)
                 delta = yi - y_hat
                 self.weights += self.learning_rate * delta * xi
-                total_error += abs(delta)
+                total_error += 0.5 * (delta ** 2)  # Mean squared error
 
             timelapse["lapse"][epoch] = {
                 "weights": self.weights.tolist(),
                 "total_error": float(total_error),
             }
 
-            if total_error < 1e-3:  # tolerancia para error continuo
+            total_error /= len(data)
+
+            if total_error < 1e-3:
                 break
 
         return timelapse
@@ -69,7 +71,7 @@ class PerceptronLineal:
 
 class PerceptronNoLineal:
     def __init__(self, input_size, tita, tita_prime, learning_rate=0.05):
-        self.weights = np.random.uniform(0, 1, input_size + 1)
+        self.weights = np.random.normal(0, np.sqrt(2.0 / (input_size + 1)), input_size + 1)
         self.learning_rate = learning_rate
         self.tita = tita
         self.tita_prime = tita_prime
@@ -89,12 +91,14 @@ class PerceptronNoLineal:
                 y_hat, y_hat_prime = self.predict(xi)
                 delta = yi - y_hat
                 self.weights += self.learning_rate * delta * y_hat_prime * xi
-                total_error += abs(delta)
+                total_error += 0.5 * (delta ** 2)  # Mean squared error
 
             timelapse["lapse"][epoch] = {
                 "weights": self.weights.tolist(),
                 "total_error": float(total_error),
             }
+
+            total_error /= len(data)
 
             if total_error < 1e-3:
                 break
@@ -110,11 +114,13 @@ class PerceptronMulticapa:
         self.tita_prime = tita_prime
         self.weights = []  # pesos[i] conecta capas[i] -> capas[i+1]
 
-        # Inicialización aleatoria de los pesos (incluyendo bias)
+        # Inicialización Xavier/Glorot de los pesos
         for i in range(len(capas) - 1):
             neuronas = capas[i + 1]
             entradas = capas[i] + 1  # +1 por bias
-            self.weights.append(np.random.uniform(-1, 1, (neuronas, entradas)))
+            # Xavier/Glorot initialization: scale = sqrt(2.0 / (fan_in + fan_out))
+            scale = np.sqrt(2.0 / (entradas + neuronas))
+            self.weights.append(np.random.normal(0, scale, (neuronas, entradas)))
 
     def forward(self, x):
         entrada = np.array(x)
@@ -144,7 +150,7 @@ class PerceptronMulticapa:
             siguiente_delta = deltas[j]
             siguiente_pesos = self.weights[j]
 
-            error_oculto = np.dot(siguiente_delta, siguiente_pesos[:, :-1])
+            error_oculto = np.dot(siguiente_delta, siguiente_pesos[:, 1:])
             deltas[i] = error_oculto * np.array([self.tita_prime(s) for s in capa])
 
         # Actualización de pesos

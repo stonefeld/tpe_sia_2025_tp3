@@ -1,8 +1,9 @@
 import os
 import random
+
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-import shutil
+
 
 def create_number_image(number, size=(35, 35), base_font_size=30, noise_level=0.1, 
                        rotation_range=(-10, 10), size_variation=0.3, position_variation=0.2):
@@ -133,8 +134,8 @@ def main():
     # Parameters
     start_num = 0
     end_num = 9
-    training_images_per_number = 100
-    testing_images_per_number = 20
+    training_images_per_number = 400
+    testing_images_per_number = 100
     
     # Generate training set
     print("Generating training set...")
