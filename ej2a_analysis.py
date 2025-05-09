@@ -16,16 +16,20 @@ def sigmoid_derivative(x, beta=1):
     return 2 * beta * s * (1 - s)
 
 
+def tanh(h):
+    return math.tanh(h)
+
+
+def tanh_prime(h):
+    return 1 - tanh(h) ** 2
+
+
 def prepare_data(raw_x):
     return np.array([[1] + list(row) for row in raw_x])
 
 
 def run_multiple_trainings(
-    data: np.ndarray,
-    labels: np.ndarray,
-    learning_rates: List[float],
-    n_runs: int = 10,
-    epochs: int = 1000
+    data: np.ndarray, labels: np.ndarray, learning_rates: List[float], n_runs: int = 10, epochs: int = 1000
 ) -> Tuple[Dict[float, List[float]], Dict[float, List[float]]]:
     """Run multiple training sessions for each learning rate and return average errors."""
     lineal_errors = {lr: [] for lr in learning_rates}
@@ -50,10 +54,7 @@ def run_multiple_trainings(
     return lineal_errors, nolineal_errors
 
 
-def plot_error_vs_learning_rate(
-    lineal_errors: Dict[float, List[float]],
-    nolineal_errors: Dict[float, List[float]]
-):
+def plot_error_vs_learning_rate(lineal_errors: Dict[float, List[float]], nolineal_errors: Dict[float, List[float]]):
     """Plot average error vs learning rate with standard deviation."""
     lrs = sorted(lineal_errors.keys())
     lineal_means = [np.mean(lineal_errors[lr]) for lr in lrs]
@@ -62,47 +63,63 @@ def plot_error_vs_learning_rate(
     nolineal_stds = [np.std(nolineal_errors[lr]) for lr in lrs]
 
     plt.figure(figsize=(12, 6))
-    
+
     # Lineal
-    plt.errorbar(lrs, lineal_means, yerr=lineal_stds, fmt='o-', label='Lineal', color='blue')
+    plt.errorbar(lrs, lineal_means, yerr=lineal_stds, fmt="o-", label="Lineal", color="blue")
     min_lineal_idx = np.argmin(lineal_means)
-    plt.plot(lrs[min_lineal_idx], lineal_means[min_lineal_idx], 'r*', markersize=15, 
-             label=f'Min Lineal: {lineal_means[min_lineal_idx]:.4f}')
+    plt.plot(
+        lrs[min_lineal_idx], lineal_means[min_lineal_idx], "r*", markersize=15, label=f"Min Lineal: {lineal_means[min_lineal_idx]:.4f}"
+    )
 
     # No Lineal
-    plt.errorbar(lrs, nolineal_means, yerr=nolineal_stds, fmt='s-', label='No Lineal', color='green')
+    plt.errorbar(lrs, nolineal_means, yerr=nolineal_stds, fmt="s-", label="No Lineal", color="green")
     min_nolineal_idx = np.argmin(nolineal_means)
-    plt.plot(lrs[min_nolineal_idx], nolineal_means[min_nolineal_idx], 'r*', markersize=15,
-             label=f'Min No Lineal: {nolineal_means[min_nolineal_idx]:.4f}')
+    plt.plot(
+        lrs[min_nolineal_idx],
+        nolineal_means[min_nolineal_idx],
+        "r*",
+        markersize=15,
+        label=f"Min No Lineal: {nolineal_means[min_nolineal_idx]:.4f}",
+    )
 
-    plt.xlabel('Learning Rate')
-    plt.ylabel('Average Error')
-    plt.title('Error vs Learning Rate (with std)')
+    plt.xlabel("Learning Rate")
+    plt.ylabel("Average Error")
+    plt.title("Error vs Learning Rate (with std)")
     plt.legend()
     plt.grid(True)
-    plt.xscale('log')
+    plt.xscale("log")
     plt.tight_layout()
     plt.show()
 
     return lrs[min_lineal_idx], lrs[min_nolineal_idx]
 
 
-def plot_final_comparison(
-    data: np.ndarray,
-    labels: np.ndarray,
-    best_lr_lineal: float,
-    best_lr_nolineal: float,
-    epochs: int = 1000
-):
+def denormalize(y, min_y, max_y):
+    return y * (max_y - min_y) + min_y
+
+
+def calculate_original_scale_error(predictions, labels, min_y, max_y):
+    denorm_predictions = denormalize(predictions, min_y, max_y)
+    denorm_labels = denormalize(labels, min_y, max_y)
+    return np.mean(0.5 * (denorm_predictions - denorm_labels) ** 2)
+
+
+def plot_final_comparison(data: np.ndarray, labels: np.ndarray, best_lr_lineal: float, best_lr_nolineal: float, epochs: int = 1000):
     """Train with best learning rates and create comparison plots."""
     # Train with best learning rates
     plineal = PerceptronLineal(input_size=3, learning_rate=best_lr_lineal)
     timelapse_lineal = plineal.train(data, labels, epochs=epochs)
     predictions_lineal = np.array([plineal.predict(xi) for xi in data])
 
-    pnolineal = PerceptronNoLineal(input_size=3, learning_rate=best_lr_nolineal, tita=sigmoid, tita_prime=sigmoid_derivative)
+    pnolineal = PerceptronNoLineal(input_size=3, learning_rate=best_lr_nolineal, tita=tanh, tita_prime=tanh_prime)
     timelapse_nolineal = pnolineal.train(data, labels, epochs=epochs)
     predictions_nolineal = np.array([pnolineal.predict(xi)[0] for xi in data])
+
+    # Calculate errors in original scale
+    min_y = min(labels)
+    max_y = max(labels)
+    error_lineal = calculate_original_scale_error(predictions_lineal, labels, min_y, max_y)
+    error_nolineal = calculate_original_scale_error(predictions_nolineal, labels, min_y, max_y)
 
     # Plot predictions vs real
     plt.figure(figsize=(12, 6))
@@ -137,12 +154,11 @@ def plot_final_comparison(
 
     # Plot average error bar plot
     plt.figure(figsize=(8, 6))
-    errors = [np.mean(errors_lineal), np.mean(errors_nolineal)]
-    stds = [np.std(errors_lineal), np.std(errors_nolineal)]
-    plt.bar(['Lineal', 'No Lineal'], errors, yerr=stds, capsize=10)
-    plt.ylabel('Error promedio')
-    plt.title('Comparación de error promedio entre perceptrones')
-    plt.grid(True, axis='y')
+    errors = [error_lineal, error_nolineal]
+    plt.bar(["Lineal", "No Lineal"], errors, capsize=10)
+    plt.ylabel("Error promedio (escala original)")
+    plt.title("Comparación de error promedio entre perceptrones")
+    plt.grid(True, axis="y")
     plt.tight_layout()
     plt.show()
 
@@ -154,8 +170,9 @@ def main():
     y = data[:, -1]
 
     data = prepare_data(x)
-    max_y = max(abs(i) for i in y)
-    y = np.array([i / max_y for i in y])
+    min_y = min(y)
+    max_y = max(y)
+    y = np.array([(yi - min_y) / (max_y - min_y) for yi in y])
 
     # Define learning rates to test
     learning_rates = [0.001, 0.0025, 0.005, 0.0075, 0.01, 0.0125]
@@ -171,4 +188,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main()

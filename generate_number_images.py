@@ -134,8 +134,8 @@ def main():
     # Parameters
     start_num = 0
     end_num = 9
-    training_images_per_number = 400
-    testing_images_per_number = 100
+    training_images_per_number = 80
+    testing_images_per_number = 20
     
     # Generate training set
     print("Generating training set...")

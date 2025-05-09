@@ -3,7 +3,7 @@ import numpy as np
 
 class PerceptronSimple:
     def __init__(self, input_size, tita, learning_rate=0.05):
-        self.weights = np.random.uniform(0, 1, input_size + 1)  # +1 for bias
+        self.weights = np.random.uniform(-1, 1, input_size + 1)  # +1 for bias
         self.learning_rate = learning_rate
         self.tita = tita
 
@@ -14,7 +14,14 @@ class PerceptronSimple:
     def train(self, data, labels, epochs=1000) -> dict:
         data = np.array(data)
         labels = np.array(labels)
-        timelapse = {"data": data.tolist(), "labels": labels.tolist(), "lapse": {}}
+        results = {
+            "type": "simple",
+            "learning_rate": self.learning_rate,
+            "weights": self.weights.tolist(),
+            "data": data.tolist(),
+            "labels": labels.tolist(),
+            "lapse": {},
+        }
 
         for epoch in range(epochs):
             total_error = 0
@@ -24,7 +31,7 @@ class PerceptronSimple:
                 self.weights += self.learning_rate * delta * xi
                 total_error += abs(delta)
 
-            timelapse["lapse"][epoch] = {
+            results["lapse"][epoch] = {
                 "weights": self.weights.tolist(),
                 "total_error": float(total_error),
             }
@@ -32,7 +39,7 @@ class PerceptronSimple:
             if total_error == 0:
                 break
 
-        return timelapse
+        return results
 
 
 class PerceptronLineal:
@@ -46,7 +53,14 @@ class PerceptronLineal:
     def train(self, data, labels, epochs=1000):
         data = np.array(data)
         labels = np.array(labels)
-        timelapse = {"data": data.tolist(), "labels": labels.tolist(), "lapse": {}}
+        results = {
+            "type": "lineal",
+            "learning_rate": self.learning_rate,
+            "weights": self.weights.tolist(),
+            "data": data.tolist(),
+            "labels": labels.tolist(),
+            "lapse": {},
+        }
 
         for epoch in range(epochs):
             total_error = 0
@@ -54,9 +68,9 @@ class PerceptronLineal:
                 y_hat = self.predict(xi)
                 delta = yi - y_hat
                 self.weights += self.learning_rate * delta * xi
-                total_error += 0.5 * (delta ** 2)  # Mean squared error
+                total_error += 0.5 * (delta**2)  # Mean squared error
 
-            timelapse["lapse"][epoch] = {
+            results["lapse"][epoch] = {
                 "weights": self.weights.tolist(),
                 "total_error": float(total_error),
             }
@@ -66,7 +80,7 @@ class PerceptronLineal:
             if total_error < 1e-3:
                 break
 
-        return timelapse
+        return results
 
 
 class PerceptronNoLineal:
@@ -83,7 +97,14 @@ class PerceptronNoLineal:
     def train(self, data, labels, epochs=1000):
         data = np.array(data)
         labels = np.array(labels)
-        timelapse = {"data": data.tolist(), "labels": labels.tolist(), "lapse": {}}
+        results = {
+            "type": "nolineal",
+            "learning_rate": self.learning_rate,
+            "weights": self.weights.tolist(),
+            "data": data.tolist(),
+            "labels": labels.tolist(),
+            "lapse": {},
+        }
 
         for epoch in range(epochs):
             total_error = 0
@@ -91,9 +112,9 @@ class PerceptronNoLineal:
                 y_hat, y_hat_prime = self.predict(xi)
                 delta = yi - y_hat
                 self.weights += self.learning_rate * delta * y_hat_prime * xi
-                total_error += 0.5 * (delta ** 2)  # Mean squared error
+                total_error += 0.5 * (delta**2)  # Mean squared error
 
-            timelapse["lapse"][epoch] = {
+            results["lapse"][epoch] = {
                 "weights": self.weights.tolist(),
                 "total_error": float(total_error),
             }
@@ -103,16 +124,17 @@ class PerceptronNoLineal:
             if total_error < 1e-3:
                 break
 
-        return timelapse
+        return results
 
 
 class PerceptronMulticapa:
-    def __init__(self, capas, tita, tita_prime, alpha=0.1):
+    def __init__(self, capas, tita, tita_prime, alpha=0.1, optimizer=None):
         self.capas = capas  # lista de tamaños de capas [input, hidden1, ..., output]
         self.alpha = alpha
         self.tita = tita
         self.tita_prime = tita_prime
         self.weights = []  # pesos[i] conecta capas[i] -> capas[i+1]
+        self.optimizer = optimizer
 
         # Inicialización Xavier/Glorot de los pesos
         for i in range(len(capas) - 1):
@@ -121,6 +143,9 @@ class PerceptronMulticapa:
             # Xavier/Glorot initialization: scale = sqrt(2.0 / (fan_in + fan_out))
             scale = np.sqrt(2.0 / (entradas + neuronas))
             self.weights.append(np.random.normal(0, scale, (neuronas, entradas)))
+
+        if self.optimizer is not None:
+            self.optimizer.initialize(self.weights)
 
     def forward(self, x):
         entrada = np.array(x)
@@ -153,11 +178,23 @@ class PerceptronMulticapa:
             error_oculto = np.dot(siguiente_delta, siguiente_pesos[:, 1:])
             deltas[i] = error_oculto * np.array([self.tita_prime(s) for s in capa])
 
-        # Actualización de pesos
-        for i in range(len(self.weights)):
-            entrada = np.concatenate(([1], activaciones[i]))
-            for j in range(len(self.weights[i])):
-                self.weights[i][j] += self.alpha * deltas[i][j] * entrada
+        # Cálculo de gradientes
+        if self.optimizer is not None:
+            gradients = []
+            for i in range(len(self.weights)):
+                entrada = np.concatenate(([1], activaciones[i]))
+                grad = np.zeros_like(self.weights[i])
+                for j in range(len(self.weights[i])):
+                    grad[j] = -deltas[i][j] * entrada
+                gradients.append(grad)
+
+            self.optimizer.update(self.weights, gradients)
+
+        else:
+            for i in range(len(self.weights)):
+                entrada = np.concatenate(([1], activaciones[i]))
+                for j in range(len(self.weights[i])):
+                    self.weights[i][j] += self.alpha * deltas[i][j] * entrada
 
     def train(self, datos, salidas, epocas=1000, tolerancia=0.01):
         datos = np.array(datos)

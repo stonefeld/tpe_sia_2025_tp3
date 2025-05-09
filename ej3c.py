@@ -6,6 +6,7 @@ import csv
 import numpy as np
 from PIL import Image
 
+from src.optimizers import AdamOptimizer, MomentumOptimizer
 from src.perceptron import PerceptronMulticapa
 
 
@@ -36,15 +37,15 @@ def cargar_imagenes_y_etiquetas(carpeta):
     patron = re.compile(r"imagen_(\d+)_\w+\.png")  # coincide con imagen_3_1.png, imagen_7_b.png, etc.
 
     # Find the range of numbers to determine output size
-    min_numero = float('inf')
-    max_numero = float('-inf')
+    min_numero = float("inf")
+    max_numero = float("-inf")
     for archivo in archivos:
         match = patron.match(archivo)
         if match:
             numero = int(match.group(1))
             min_numero = min(min_numero, numero)
             max_numero = max(max_numero, numero)
-    
+
     num_outputs = max_numero - min_numero + 1
 
     for archivo in archivos:
@@ -70,7 +71,11 @@ def main():
     data, labels, num_outputs = cargar_imagenes_y_etiquetas("assets/training_set")
 
     input_size = len(data[0])
-    mlp = PerceptronMulticapa([input_size, 30, num_outputs], alpha=0.01, tita=tanh, tita_prime=tanh_prime)
+    # mlp = PerceptronMulticapa([input_size, 30, num_outputs], alpha=0.01, tita=tanh, tita_prime=tanh_prime)
+    # adam = AdamOptimizer(learning_rate=0.001)
+    # mlp = PerceptronMulticapa([input_size, 30, num_outputs], tita=tanh, tita_prime=tanh_prime, optimizer=adam)
+    momentum = MomentumOptimizer(learning_rate=0.001, momentum=0.9)
+    mlp = PerceptronMulticapa([input_size, 30, num_outputs], tita=tanh, tita_prime=tanh_prime, optimizer=momentum)
 
     print("Entrenando con múltiples imágenes por dígito...")
     mlp.train(data, labels, epocas=10000, tolerancia=0.0001)
