@@ -3,13 +3,12 @@ import math
 import random
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 from src.perceptron import PerceptronNoLineal
 
 
 def k_fold_cross_validation_nolineal(data, labels, k, tita, tita_prime, learning_rate=0.01, epochs=1000):
-    data = np.array(data)
-    labels = np.array(labels)
     combined = list(zip(data, labels))
     random.shuffle(combined)
 
@@ -26,8 +25,13 @@ def k_fold_cross_validation_nolineal(data, labels, k, tita, tita_prime, learning
         x_train, y_train = zip(*train_data)
         x_test, y_test = zip(*test_data)
 
+        x_train = np.array(x_train)
+        y_train = np.array(y_train)
+        x_test = np.array(x_test)
+        y_test = np.array(y_test)
+
         # Inicializar y entrenar perceptrón
-        p = PerceptronNoLineal(input_size=len(x_train[0]) - 1, tita=tita, tita_prime=tita_prime, learning_rate=learning_rate)
+        p = PerceptronNoLineal(input_size=len(x_train[0]), tita=tita, tita_prime=tita_prime, learning_rate=learning_rate)
         p.train(x_train, y_train, epochs)
 
         # Evaluar en test
@@ -53,23 +57,21 @@ def prepare_data(raw_x):
 
 
 def main():
-    with open("assets/conjunto.csv", "r") as f:
-        lines = csv.reader(f)
-        data = list(lines)[1:]  # Skip header
-        x = [list(map(float, row[:-1])) for row in data]
-        y = [float(row[-1]) for row in data]
+    conjunto = np.loadtxt("assets/conjunto.csv", delimiter=",", skiprows=1)
+    x = conjunto[:, :-1]
+    y = conjunto[:, -1]
 
-    data = prepare_data(x)
-    max_y = max(abs(i) for i in y)
+    min_y = min(y)
+    max_y = max(y)
+    y = np.array([(i - min_y) / (max_y - min_y) for i in y])
 
-    y = np.array([i / max_y for i in y])
     avg_error, fold_errors = k_fold_cross_validation_nolineal(
-        data,
+        x,
         y,
         k=5,
         tita=sigmoid,
         tita_prime=sigmoid_derivative,
-        learning_rate=0.001,
+        learning_rate=5e-3,
         epochs=10000,
     )
 
