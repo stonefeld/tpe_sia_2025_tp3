@@ -20,3 +20,5 @@ wheels/
 *.log
 *.out
 *.toc
+*.png
+assets/

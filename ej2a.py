@@ -1,8 +1,9 @@
 import csv
 import json
 import math
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 
 from src.perceptron import PerceptronLineal, PerceptronNoLineal
 
@@ -16,84 +17,141 @@ def sigmoid_derivative(x, beta=1):
     return 2 * beta * s * (1 - s)
 
 
-def prepare_data(raw_x):
-    return np.array([[1] + list(row) for row in raw_x])
+def plot_errors(lineal_average_errors, nolineal_average_errors):
+    min_lineal = min(lineal_average_errors.items(), key=lambda x: x[1])
+    min_nolineal = min(nolineal_average_errors.items(), key=lambda x: x[1])
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    ax.plot(lineal_average_errors.keys(), lineal_average_errors.values(), marker="o", linestyle="-", color="purple", label="Lineal")
+    ax.plot(nolineal_average_errors.keys(), nolineal_average_errors.values(), marker="o", linestyle="-", color="orange", label="No Lineal")
+    ax.plot(min_lineal[0], min_lineal[1], marker="*", color="red", markersize=15)
+    ax.plot(min_nolineal[0], min_nolineal[1], marker="*", color="red", markersize=15)
+
+    ax.set_xlabel("Learning Rate")
+    ax.set_ylabel("Error total")
+    ax.set_title("Error total vs Learning Rate")
+    ax.set_xscale("log")
+    ax.legend()
+    ax.grid(True, linestyle="--", alpha=0.5)
+    fig.savefig("error_lineal_nolineal.png")
+
+    plt.tight_layout()
+    plt.show()
+
+    return min_lineal[0], min_nolineal[0]
 
 
-def plot_prediction_vs_real(data, labels, predictions_lineal, predictions_nolineal):
-    plt.figure(figsize=(10, 6))
-    plt.plot(predictions_lineal, "rs-", label="Predicho (lineal)")
-    plt.plot(predictions_nolineal, "gx-", label="Predicho (no lineal)")
-    plt.plot(labels, "bo:", label="Real")
-    plt.title("Predicción (Lineal vs No Lineal) vs Real")
-    plt.xlabel("Índice de muestra")
-    plt.ylabel("Valor de salida")
-    plt.legend()
-    plt.grid(True)
+def plot_prediction_vs_real(labels, predictions_lineal, predictions_nolineal):
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    ax.plot(predictions_lineal, "rs-", label="Predicho (lineal)")
+    ax.plot(predictions_nolineal, "gx-", label="Predicho (no lineal)")
+    ax.plot(labels, "bo:", label="Real")
+
+    ax.set_title("Predicción (Lineal vs No Lineal) vs Real")
+    ax.set_xlabel("Índice de muestra")
+    ax.set_ylabel("Valor de salida")
+    ax.legend()
+    ax.grid(True, linestyle="--", alpha=0.5)
+    fig.savefig("prediction_vs_real.png")
+
     plt.tight_layout()
     plt.show()
 
 
-def plot_training_error(timelapse_lineal: dict, timelapse_nolineal: dict):
+def plot_training_error(timelapse_lineal, timelapse_nolineal):
     epochs_lineal = sorted(int(k) for k in timelapse_lineal["lapse"].keys())
     errors_lineal = [timelapse_lineal["lapse"][epoch]["total_error"] for epoch in epochs_lineal]
 
     epochs_nolineal = sorted(int(k) for k in timelapse_nolineal["lapse"].keys())
     errors_nolineal = [timelapse_nolineal["lapse"][epoch]["total_error"] for epoch in epochs_nolineal]
 
-    plt.figure(figsize=(10, 5))
-    plt.plot(epochs_lineal, errors_lineal, marker="o", linestyle="-", color="purple", label="Lineal")
-    plt.plot(epochs_nolineal, errors_nolineal, marker="o", linestyle="-", color="orange", label="No Lineal")
-    plt.xlabel("Época")
-    plt.ylabel("Error total")
-    plt.title("Error total durante el entrenamiento (Lineal vs No Lineal)")
-    plt.legend()
-    plt.grid(True)
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    ax.plot(epochs_lineal, errors_lineal, marker="o", linestyle="-", color="purple", label="Lineal")
+    ax.plot(epochs_nolineal, errors_nolineal, marker="o", linestyle="-", color="orange", label="No Lineal")
+
+    ax.set_xlabel("Época")
+    ax.set_ylabel("Error total")
+    ax.set_title("Error total durante el entrenamiento (Lineal vs No Lineal)")
+    ax.legend()
+    ax.grid(True, linestyle="--", alpha=0.5)
+    fig.savefig("training_error.png")
+
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_average_error(lineal_average_errors, nolineal_average_errors):
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    ax.bar(["Lineal", "No Lineal"], [lineal_average_errors, nolineal_average_errors])
+    ax.set_xlabel("Perceptron")
+    ax.set_ylabel("Error promedio")
+    ax.set_title("Error promedio de cada perceptron")
+    fig.savefig("average_error.png")
+
     plt.tight_layout()
     plt.show()
 
 
 def main():
-    with open("assets/conjunto.csv", "r") as f:
-        lines = csv.reader(f)
-        data = list(lines)[1:]  # Skip header
-        x = [list(map(float, row[:-1])) for row in data]
-        y = [float(row[-1]) for row in data]
+    conjunto = np.loadtxt("assets/conjunto.csv", delimiter=",", skiprows=1)
+    x = conjunto[:, :-1]
+    y = conjunto[:, -1]
 
-    data = prepare_data(x)
-    max_y = max(abs(i) for i in y)
-    y = np.array([i / max_y for i in y])
-    plineal = PerceptronLineal(input_size=3, learning_rate=0.001)
+    learning_rates = [1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5]
+    repeats = 10
 
-    timelapse_lineal = plineal.train(data, y, epochs=10000)
-    predictions_lineal = np.array([plineal.predict(xi) for xi in data])
+    min_y = min(y)
+    max_y = max(y)
+    y = np.array([(i - min_y) / (max_y - min_y) for i in y])
 
-    print(f"Entrenamiento completado en la época {len(timelapse_lineal['lapse'])}")
-    print("Predicciones finales:")
-    for i, (xi, yi) in enumerate(zip(data, y)):
-        y_hat = predictions_lineal[i]
-        print(f"- Input: ({xi[1]:5.2f}, {xi[2]:5.2f}, {xi[3]:5.2f}) -> Predicción: {y_hat:5.2f}, Esperado: {yi:5.2f}")
+    lineal_average_errors = {}
+    nolineal_average_errors = {}
+    lineal_predict = {}
+    nolineal_predict = {}
+    lineal_timelapse = {}
+    nolineal_timelapse = {}
 
-    with open("timelapse_ej2_lineal.json", "w") as f:
-        json.dump(timelapse_lineal, f, indent=2)
+    for learning_rate in learning_rates:
+        lineal_average_errors[learning_rate] = 0
+        nolineal_average_errors[learning_rate] = 0
+        lineal_predict[learning_rate] = []
+        nolineal_predict[learning_rate] = []
+        lineal_timelapse[learning_rate] = {}
+        nolineal_timelapse[learning_rate] = {}
 
-    # NO LINEAL
-    pnolineal = PerceptronNoLineal(input_size=3, learning_rate=0.001, tita=sigmoid, tita_prime=sigmoid_derivative)
+        for _ in range(repeats):
+            plineal = PerceptronLineal(input_size=x.shape[1], learning_rate=learning_rate)
 
-    timelapse_nolineal = pnolineal.train(data, y, epochs=10000)
-    predictions_nolineal = np.array([pnolineal.predict(xi)[0] for xi in data])
+            timelapse_lineal = plineal.train(x, y, epochs=1000)
+            last_epoch = max(int(k) for k in timelapse_lineal["lapse"].keys())
+            lineal_average_errors[learning_rate] += timelapse_lineal["lapse"][last_epoch]["total_error"]
 
-    plot_prediction_vs_real(data, y, predictions_lineal, predictions_nolineal)
-    plot_training_error(timelapse_lineal, timelapse_nolineal)
+            if len(lineal_predict[learning_rate]) == 0:
+                lineal_predict[learning_rate] = [plineal.predict(i) for i in x]
+                lineal_timelapse[learning_rate] = timelapse_lineal
 
-    print(f"Entrenamiento completado en la época {len(timelapse_nolineal['lapse'])}")
-    print("Predicciones finales:")
-    for i, (xi, yi) in enumerate(zip(data, y)):
-        y_hat = predictions_nolineal[i]
-        print(f"- Input: ({xi[1]:5.2f}, {xi[2]:5.2f}, {xi[3]:5.2f}) -> Predicción: {y_hat:5.2f}, Esperado: {yi:5.2f}")
+            # NO LINEAL
+            pnolineal = PerceptronNoLineal(input_size=x.shape[1], learning_rate=learning_rate, tita=sigmoid, tita_prime=sigmoid_derivative)
 
-    with open("timelapse_ej2_nolineal.json", "w") as f:
-        json.dump(timelapse_lineal, f, indent=2)
+            timelapse_nolineal = pnolineal.train(x, y, epochs=1000)
+            last_epoch = max(int(k) for k in timelapse_nolineal["lapse"].keys())
+            nolineal_average_errors[learning_rate] += timelapse_nolineal["lapse"][last_epoch]["total_error"]
+
+            if len(nolineal_predict[learning_rate]) == 0:
+                nolineal_predict[learning_rate] = [pnolineal.predict(i)[0] for i in x]
+                nolineal_timelapse[learning_rate] = timelapse_nolineal
+
+        lineal_average_errors[learning_rate] /= repeats
+        nolineal_average_errors[learning_rate] /= repeats
+
+    best_lineal, best_nolineal = plot_errors(lineal_average_errors, nolineal_average_errors)
+    plot_prediction_vs_real(y, lineal_predict[best_lineal], nolineal_predict[best_nolineal])
+    plot_training_error(lineal_timelapse[best_lineal], nolineal_timelapse[best_nolineal])
+    plot_average_error(lineal_average_errors[best_lineal], nolineal_average_errors[best_nolineal])
 
 
 if __name__ == "__main__":

@@ -37,15 +37,15 @@ class PerceptronSimple:
 
 class PerceptronLineal:
     def __init__(self, input_size, learning_rate=0.05):
-        self.weights = np.random.normal(0, np.sqrt(2.0 / (input_size + 1)), input_size + 1)
+        self.weights = np.random.normal(0, np.sqrt(2.0 / (input_size + 2)), input_size + 1)
+        # self.weights = np.random.uniform(-1, 1, input_size + 1)
         self.learning_rate = learning_rate
 
     def predict(self, x):
-        return np.dot(self.weights, x)  # sin activación
+        data = np.concatenate(([1], x))
+        return np.dot(self.weights, data)  # sin activación
 
     def train(self, data, labels, epochs=1000):
-        data = np.array(data)
-        labels = np.array(labels)
         timelapse = {"data": data.tolist(), "labels": labels.tolist(), "lapse": {}}
 
         for epoch in range(epochs):
@@ -53,7 +53,8 @@ class PerceptronLineal:
             for xi, yi in zip(data, labels):
                 y_hat = self.predict(xi)
                 delta = yi - y_hat
-                self.weights += self.learning_rate * delta * xi
+                xb = np.concatenate(([1], xi))
+                self.weights += self.learning_rate * delta * xb
                 total_error += 0.5 * (delta ** 2)  # Mean squared error
 
             timelapse["lapse"][epoch] = {
@@ -77,12 +78,11 @@ class PerceptronNoLineal:
         self.tita_prime = tita_prime
 
     def predict(self, x):
-        h = np.dot(self.weights, x)
+        data = np.concatenate(([1], x))
+        h = np.dot(self.weights, data)
         return self.tita(h), self.tita_prime(h)
 
     def train(self, data, labels, epochs=1000):
-        data = np.array(data)
-        labels = np.array(labels)
         timelapse = {"data": data.tolist(), "labels": labels.tolist(), "lapse": {}}
 
         for epoch in range(epochs):
@@ -90,7 +90,8 @@ class PerceptronNoLineal:
             for xi, yi in zip(data, labels):
                 y_hat, y_hat_prime = self.predict(xi)
                 delta = yi - y_hat
-                self.weights += self.learning_rate * delta * y_hat_prime * xi
+                xb = np.concatenate(([1], xi))
+                self.weights += self.learning_rate * delta * y_hat_prime * xb
                 total_error += 0.5 * (delta ** 2)  # Mean squared error
 
             timelapse["lapse"][epoch] = {
