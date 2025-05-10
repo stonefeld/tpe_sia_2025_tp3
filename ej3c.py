@@ -1,7 +1,7 @@
+import csv
 import math
 import os
 import re
-import csv
 
 import numpy as np
 from PIL import Image
@@ -79,40 +79,18 @@ def main():
     test_data, test_labels, _ = cargar_imagenes_y_etiquetas("assets/testing_set")
     correctos = 0
 
-    # Guardar resultados en CSV
-    with open('resultados_digitos_reconocimiento.csv', 'w', newline='') as f:
-        writer = csv.writer(f)
-        # Escribir encabezados
-        writer.writerow(['imagen', 'esperado', 'predicho', 'correcto', 'confianza', 'salidas_completas'])
-        
-        print("\nResultados sobre el conjunto de test:")
-        for i, x in enumerate(test_data):
-            salida = mlp.forward(x)[-1]
-            predicho = np.argmax(salida)
-            esperado = np.argmax(test_labels[i])
-            correcto = predicho == esperado
-            confianza = salida[predicho]  # valor de confianza para la predicción
-            
-            if correcto:
-                correctos += 1
-            
-            # Guardar en CSV
-            writer.writerow([
-                i,
-                esperado,
-                predicho,
-                correcto,
-                f"{confianza:.5f}",
-                ','.join(f"{s:.5f}" for s in salida)
-            ])
-            
-            # Imprimir en consola
-            print(f"Imagen {i}: Esperado: {esperado}, Predicho: {predicho}", end="")
-            if correcto:
-                print(" ✅")
-            else:
-                print(" ❌")
-            print(f"\tSalida: [{', '.join(f'{s:8.5f}' for s in salida)}]")
+    print("\nResultados sobre el conjunto de test:")
+    for i, x in enumerate(test_data):
+        salida = mlp.forward(x)[-1]
+        predicho = np.argmax(salida)
+        esperado = np.argmax(test_labels[i])
+        print(f"Imagen {i}: Esperado: {esperado}, Predicho: {predicho}", end="")
+        if predicho == esperado:
+            correctos += 1
+            print(" ✅")
+        else:
+            print(" ❌")
+        print(f"\tSalida: [{', '.join(f'{s:8.5f}' for s in salida)}]")
 
     print(f"\nTotal de imágenes correctas: {correctos}/{len(test_data)}")
     print(f"Porcentaje de aciertos: {correctos/len(test_data)*100:.2f}%")

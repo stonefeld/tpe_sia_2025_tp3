@@ -1,6 +1,7 @@
-import math
-import numpy as np
 import csv
+import math
+
+import numpy as np
 
 from src.perceptron import PerceptronMulticapa
 
@@ -33,36 +34,20 @@ def main():
     data, labels = cargar_digitos_y_etiquetas()
 
     # Red de 35 entradas, 10 neuronas ocultas, 1 salida
-    mlp = PerceptronMulticapa(capas=[35, 10, 1], tita=tanh, tita_prime=tanh_prime, alpha=0.1)
+    mlp = PerceptronMulticapa(capas=[data.shape[1], 10, 1], tita=tanh, tita_prime=tanh_prime, alpha=0.1)
     mlp.train(data, labels, epocas=1000, tolerancia=0.005)
 
-    # Guardar resultados en CSV
-    with open('resultados_digitos.csv', 'w', newline='') as f:
-        writer = csv.writer(f)
-        # Escribir encabezados
-        writer.writerow(['digito', 'predicho', 'esperado', 'salida_exacta', 'correcto'])
-        
-        # Imprimir y guardar resultados
-        print("\nResultados del entrenamiento:")
-        for i, x in enumerate(data):
-            salida = mlp.predict(x)
-            predicho_valor = round(salida[0])
-            predicho = "IMPAR" if predicho_valor > 0 else "PAR"
-            esperado_valor = labels[i]
-            esperado = "IMPAR" if esperado_valor > 0 else "PAR"
-            correcto = predicho == esperado
-            
-            # Guardar en CSV
-            writer.writerow([i, predicho, esperado, f"{salida[0]:.5f}", correcto])
-            
-            # Imprimir en consola
-            resultado = f"Dígito {i}: Predicho: {predicho}, Esperado: {esperado}"
-            if correcto:
-                resultado += " ✅"
-            else:
-                resultado += " ❌"
-            resultado += f"\n\tSalida: {salida[0]:8.5f}\n"
-            print(resultado, end="")
+    for i, x in enumerate(data):
+        salida = mlp.predict(x)
+        predicho = round(salida[0])
+        paridad = "IMPAR" if predicho > 0 else "PAR"
+        esperado = labels[i]
+        print(f"Dígito {i}: Predicho: {predicho:>2}, Esperado: {esperado:>2}, Paridad: {paridad}", end="")
+        if predicho == esperado:
+            print(" ✅")
+        else:
+            print(" ❌")
+        print(f"\tSalida: {salida[0]:8.5f}")
 
 
 if __name__ == "__main__":
