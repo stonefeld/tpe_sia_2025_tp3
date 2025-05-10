@@ -17,16 +17,25 @@ def sigmoid_derivative(x, beta=1):
     return 2 * beta * s * (1 - s)
 
 
-def plot_errors(lineal_average_errors, nolineal_average_errors):
-    min_lineal = min(lineal_average_errors.items(), key=lambda x: x[1])
-    min_nolineal = min(nolineal_average_errors.items(), key=lambda x: x[1])
+def plot_errors(lineal_errors, nolineal_errors):
+    lineal_labels = lineal_errors.keys()
+    nolineal_labels = nolineal_errors.keys()
+
+    lineal_avg_errors = [x["average"] for x in lineal_errors.values()]
+    nolineal_avg_errors = [x["average"] for x in nolineal_errors.values()]
+
+    lineal_std_errors = [x["std"] for x in lineal_errors.values()]
+    nolineal_std_errors = [x["std"] for x in nolineal_errors.values()]
+
+    min_lineal = min(lineal_errors.items(), key=lambda x: x[1]["average"])
+    min_nolineal = min(nolineal_errors.items(), key=lambda x: x[1]["average"])
 
     fig, ax = plt.subplots(figsize=(10, 5))
 
-    ax.plot(lineal_average_errors.keys(), lineal_average_errors.values(), marker="o", linestyle="-", color="purple", label="Lineal")
-    ax.plot(nolineal_average_errors.keys(), nolineal_average_errors.values(), marker="o", linestyle="-", color="orange", label="No Lineal")
-    ax.plot(min_lineal[0], min_lineal[1], marker="*", color="red", markersize=15)
-    ax.plot(min_nolineal[0], min_nolineal[1], marker="*", color="red", markersize=15)
+    ax.errorbar(lineal_labels, lineal_avg_errors, yerr=lineal_std_errors, marker="o", linestyle="-", color="purple", label="Lineal")
+    ax.errorbar(nolineal_labels, nolineal_avg_errors, yerr=nolineal_std_errors, marker="o", linestyle="-", color="orange", label="No Lineal")
+    ax.plot(min_lineal[0], min_lineal[1]["average"], marker="*", color="red", markersize=15)
+    ax.plot(min_nolineal[0], min_nolineal[1]["average"], marker="*", color="red", markersize=15)
 
     ax.set_xlabel("Learning Rate")
     ax.set_ylabel("Error total")
@@ -108,16 +117,16 @@ def main():
     max_y = max(y)
     y = np.array([(i - min_y) / (max_y - min_y) for i in y])
 
-    lineal_average_errors = {}
-    nolineal_average_errors = {}
+    lineal_errors = {}
+    nolineal_errors = {}
     lineal_predict = {}
     nolineal_predict = {}
     lineal_timelapse = {}
     nolineal_timelapse = {}
 
     for learning_rate in learning_rates:
-        lineal_average_errors[learning_rate] = 0
-        nolineal_average_errors[learning_rate] = 0
+        lineal_errors[learning_rate] = {"errors": [], "std": 0, "average": 0}
+        nolineal_errors[learning_rate] = {"errors": [], "std": 0, "average": 0}
         lineal_predict[learning_rate] = []
         nolineal_predict[learning_rate] = []
         lineal_timelapse[learning_rate] = {}
@@ -128,7 +137,7 @@ def main():
 
             timelapse_lineal = plineal.train(x, y, epochs=1000)
             last_epoch = max(int(k) for k in timelapse_lineal["lapse"].keys())
-            lineal_average_errors[learning_rate] += timelapse_lineal["lapse"][last_epoch]["total_error"]
+            lineal_errors[learning_rate]["errors"].append(timelapse_lineal["lapse"][last_epoch]["total_error"])
 
             if len(lineal_predict[learning_rate]) == 0:
                 lineal_predict[learning_rate] = [plineal.predict(i) for i in x]
@@ -139,19 +148,21 @@ def main():
 
             timelapse_nolineal = pnolineal.train(x, y, epochs=1000)
             last_epoch = max(int(k) for k in timelapse_nolineal["lapse"].keys())
-            nolineal_average_errors[learning_rate] += timelapse_nolineal["lapse"][last_epoch]["total_error"]
+            nolineal_errors[learning_rate]["errors"].append(timelapse_nolineal["lapse"][last_epoch]["total_error"])
 
             if len(nolineal_predict[learning_rate]) == 0:
                 nolineal_predict[learning_rate] = [pnolineal.predict(i)[0] for i in x]
                 nolineal_timelapse[learning_rate] = timelapse_nolineal
 
-        lineal_average_errors[learning_rate] /= repeats
-        nolineal_average_errors[learning_rate] /= repeats
+        lineal_errors[learning_rate]["std"] = np.std(lineal_errors[learning_rate]["errors"])
+        lineal_errors[learning_rate]["average"] = np.mean(lineal_errors[learning_rate]["errors"])
+        nolineal_errors[learning_rate]["std"] = np.std(nolineal_errors[learning_rate]["errors"])
+        nolineal_errors[learning_rate]["average"] = np.mean(nolineal_errors[learning_rate]["errors"])
 
-    best_lineal, best_nolineal = plot_errors(lineal_average_errors, nolineal_average_errors)
+    best_lineal, best_nolineal = plot_errors(lineal_errors, nolineal_errors)
     plot_prediction_vs_real(y, lineal_predict[best_lineal], nolineal_predict[best_nolineal])
     plot_training_error(lineal_timelapse[best_lineal], nolineal_timelapse[best_nolineal])
-    plot_average_error(lineal_average_errors[best_lineal], nolineal_average_errors[best_nolineal])
+    plot_average_error(lineal_errors[best_lineal]["average"], nolineal_errors[best_nolineal]["average"])
 
 
 if __name__ == "__main__":

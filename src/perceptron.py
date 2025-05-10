@@ -3,7 +3,7 @@ import numpy as np
 
 class PerceptronSimple:
     def __init__(self, input_size, tita, learning_rate=0.05):
-        self.weights = np.random.uniform(0, 1, input_size + 1)  # +1 for bias
+        self.weights = np.random.uniform(-1, 1, input_size + 1)  # +1 for bias
         self.learning_rate = learning_rate
         self.tita = tita
 
@@ -37,8 +37,7 @@ class PerceptronSimple:
 
 class PerceptronLineal:
     def __init__(self, input_size, learning_rate=0.05):
-        self.weights = np.random.normal(0, np.sqrt(2.0 / (input_size + 2)), input_size + 1)
-        # self.weights = np.random.uniform(-1, 1, input_size + 1)
+        self.weights = np.random.uniform(-0.1, 0.1, input_size + 1)
         self.learning_rate = learning_rate
 
     def predict(self, x):
@@ -72,7 +71,7 @@ class PerceptronLineal:
 
 class PerceptronNoLineal:
     def __init__(self, input_size, tita, tita_prime, learning_rate=0.05):
-        self.weights = np.random.normal(0, np.sqrt(2.0 / (input_size + 1)), input_size + 1)
+        self.weights = np.random.uniform(-0.1, 0.1, input_size + 1)
         self.learning_rate = learning_rate
         self.tita = tita
         self.tita_prime = tita_prime
