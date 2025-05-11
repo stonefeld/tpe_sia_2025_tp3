@@ -1,4 +1,3 @@
-import csv
 import math
 import os
 import re
@@ -36,15 +35,15 @@ def cargar_imagenes_y_etiquetas(carpeta):
     patron = re.compile(r"imagen_(\d+)_\w+\.png")  # coincide con imagen_3_1.png, imagen_7_b.png, etc.
 
     # Find the range of numbers to determine output size
-    min_numero = float('inf')
-    max_numero = float('-inf')
+    min_numero = float("inf")
+    max_numero = float("-inf")
     for archivo in archivos:
         match = patron.match(archivo)
         if match:
             numero = int(match.group(1))
             min_numero = min(min_numero, numero)
             max_numero = max(max_numero, numero)
-    
+
     num_outputs = max_numero - min_numero + 1
 
     for archivo in archivos:

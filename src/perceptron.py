@@ -54,7 +54,7 @@ class PerceptronLineal:
                 delta = yi - y_hat
                 xb = np.concatenate(([1], xi))
                 self.weights += self.learning_rate * delta * xb
-                total_error += 0.5 * (delta ** 2)  # Mean squared error
+                total_error += 0.5 * (delta**2)  # Mean squared error
 
             timelapse["lapse"][epoch] = {
                 "weights": self.weights.tolist(),
@@ -91,7 +91,7 @@ class PerceptronNoLineal:
                 delta = yi - y_hat
                 xb = np.concatenate(([1], xi))
                 self.weights += self.learning_rate * delta * y_hat_prime * xb
-                total_error += 0.5 * (delta ** 2)  # Mean squared error
+                total_error += 0.5 * (delta**2)  # Mean squared error
 
             timelapse["lapse"][epoch] = {
                 "weights": self.weights.tolist(),

@@ -2,8 +2,8 @@ import csv
 import math
 import random
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from src.perceptron import PerceptronNoLineal
 
