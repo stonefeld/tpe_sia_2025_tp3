@@ -2,8 +2,6 @@ import math
 import os
 import re
 import csv
-from datetime import datetime
-
 import numpy as np
 from PIL import Image
 
@@ -66,57 +64,53 @@ def cargar_imagenes_y_etiquetas(carpeta):
     return np.array(imagenes), np.array(etiquetas), num_outputs
 
 
-def main():
-    # TRAINING
-    data, labels, num_outputs = cargar_imagenes_y_etiquetas("assets/training_set")
+def calcular_accuracy(preds, targets):
+    correctos = sum(np.argmax(p) == np.argmax(t) for p, t in zip(preds, targets))
+    return correctos / len(targets)
 
-    input_size = len(data[0])
-    layers = [input_size, 30, num_outputs]
+
+def main():
+    # Cargar datos
+    X_train, Y_train, num_outputs = cargar_imagenes_y_etiquetas("assets/training_set")
+    X_test, Y_test, _ = cargar_imagenes_y_etiquetas("assets/testing_set")
+
+    input_size = len(X_train[0])
+    capas = [input_size, 30, num_outputs]
 
     sgd = SGD(learning_rate=0.01)
     momentum = Momentum(learning_rate=0.001, momentum=0.8)
     adam = Adam(learning_rate=0.001, layers=layers)
-    mlp = PerceptronMulticapa(layers, tita=tanh, tita_prime=tanh_prime, optimizer=momentum)
 
-    print("Entrenando con múltiples imágenes por dígito...")
-    mlp.train(data, labels, epocas=1000, tolerancia=0.001)
+    mlp = PerceptronMulticapa(
+        capas, tita=tanh, tita_prime=tanh_prime,
+        optimizer=momentum
+    )
 
-    # TESTING
-    test_data, test_labels, _ = cargar_imagenes_y_etiquetas("assets/testing_set")
-    correctos = 0
+    epocas = 300
+    train_accs = []
+    test_accs = []
 
-    # Crear archivo CSV con timestamp
-    csv_filename = f"resultados_test_3c.csv"
-    
-    with open(csv_filename, 'w', newline='') as csvfile:
-        csv_writer = csv.writer(csvfile)
-        # Escribir encabezados
-        csv_writer.writerow(['Imagen', 'Esperado', 'Predicho', 'Salidas'])
-        
-        print("\nResultados sobre el conjunto de test:")
-        for i, x in enumerate(test_data):
-            salida = mlp.forward(x)[-1]
-            predicho = np.argmax(salida)
-            esperado = np.argmax(test_labels[i])
-            es_correcto = predicho == esperado
-            if es_correcto:
-                correctos += 1
-                print(f"Imagen {i}: Esperado: {esperado}, Predicho: {predicho} ✅")
-            else:
-                print(f"Imagen {i}: Esperado: {esperado}, Predicho: {predicho} ❌")
-            print(f"\tSalida: [{', '.join(f'{s:8.5f}' for s in salida)}]")
-            
-            # Guardar en CSV
-            csv_writer.writerow([
-                i,
-                esperado,
-                predicho,
-                ','.join(f'{s:.5f}' for s in salida)
-            ])
+    for epoch in range(epocas):
+        mlp.train(X_train, Y_train, epocas=1, tolerancia=0.001)
 
-    print(f"\nTotal de imágenes correctas: {correctos}/{len(test_data)}")
-    print(f"Porcentaje de aciertos: {correctos/len(test_data)*100:.2f}%")
-    print(f"\nResultados guardados en: {csv_filename}")
+        pred_train = [mlp.forward(x)[-1] for x in X_train]
+        acc_train = calcular_accuracy(pred_train, Y_train)
+        train_accs.append(acc_train)
+
+        pred_test = [mlp.forward(x)[-1] for x in X_test]
+        acc_test = calcular_accuracy(pred_test, Y_test)
+        test_accs.append(acc_test)
+
+        print(f"Epoch {epoch+1}/{epocas} - Train Acc: {acc_train:.4f} - Test Acc: {acc_test:.4f}")
+
+    # Guardar en CSV
+    with open("accuracy_vs_epoch.csv", "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["epoch", "train_accuracy", "test_accuracy"])
+        for i in range(epocas):
+            writer.writerow([i+1, train_accs[i], test_accs[i]])
+
+    print("\n¡Entrenamiento completo! Accuracy por época guardado en 'accuracy_vs_epoch.csv'")
 
 
 if __name__ == "__main__":
