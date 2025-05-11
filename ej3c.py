@@ -75,14 +75,14 @@ def main():
     X_test, Y_test, _ = cargar_imagenes_y_etiquetas("assets/testing_set")
 
     input_size = len(X_train[0])
-    capas = [input_size, 30, num_outputs]
+    layers = [input_size, 30, num_outputs]
 
     sgd = SGD(learning_rate=0.01)
     momentum = Momentum(learning_rate=0.001, momentum=0.8)
     adam = Adam(learning_rate=0.001, layers=layers)
 
     mlp = PerceptronMulticapa(
-        capas, tita=tanh, tita_prime=tanh_prime,
+        layers, tita=tanh, tita_prime=tanh_prime,
         optimizer=momentum
     )
 
