@@ -17,7 +17,7 @@ def main():
     xor_data = np.array([[-1, -1], [-1, 1], [1, -1], [1, 1]])
     xor_labels = np.array([-1, 1, 1, -1])
 
-    mlp = PerceptronMulticapa(capas=[2, 2, 1], tita=tanh, tita_prime=tanh_prime, alpha=0.1)
+    mlp = PerceptronMulticapa(capas=[2, 2, 1], tita=tanh, tita_prime=tanh_prime)
     mlp.train(xor_data, xor_labels, epocas=1000, tolerancia=0.005)
 
     print("\nResultados sobre el conjunto de entrenamiento:")
