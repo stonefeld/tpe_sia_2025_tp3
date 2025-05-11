@@ -51,7 +51,6 @@ def cargar_imagenes_y_etiquetas(carpeta):
 
         match = patron.match(archivo)
         if not match:
-            print(f"Archivo ignorado por formato no válido: {archivo}")
             continue
 
         numero = int(match.group(1))
@@ -64,53 +63,85 @@ def cargar_imagenes_y_etiquetas(carpeta):
     return np.array(imagenes), np.array(etiquetas), num_outputs
 
 
-def calcular_accuracy(preds, targets):
-    correctos = sum(np.argmax(p) == np.argmax(t) for p, t in zip(preds, targets))
-    return correctos / len(targets)
+def calcular_metricas(preds, targets):
+    clases = np.unique([np.argmax(t) for t in targets])
+    tp = {c: 0 for c in clases}
+    fp = {c: 0 for c in clases}
+    correct = 0
+
+    for p, t in zip(preds, targets):
+        pred_idx = np.argmax(p)
+        true_idx = np.argmax(t)
+        if pred_idx == true_idx:
+            correct += 1
+            tp[pred_idx] += 1
+        else:
+            fp[pred_idx] += 1
+
+    accuracy = correct / len(targets)
+
+    precision_por_clase = []
+    for c in clases:
+        denom = tp[c] + fp[c]
+        precision_c = tp[c] / denom if denom > 0 else 0
+        precision_por_clase.append(precision_c)
+
+    precision_macro = sum(precision_por_clase) / len(clases)
+    return accuracy, precision_macro
 
 
 def main():
-    # Cargar datos
     X_train, Y_train, num_outputs = cargar_imagenes_y_etiquetas("assets/training_set")
     X_test, Y_test, _ = cargar_imagenes_y_etiquetas("assets/testing_set")
 
     input_size = len(X_train[0])
-    layers = [input_size, 30, num_outputs]
+    capas = [input_size, 30, num_outputs]
 
     sgd = SGD(learning_rate=0.01)
     momentum = Momentum(learning_rate=0.001, momentum=0.8)
-    adam = Adam(learning_rate=0.001, layers=layers)
+    adam = Adam(learning_rate=0.001, layers=capas)
 
-    mlp = PerceptronMulticapa(
-        layers, tita=tanh, tita_prime=tanh_prime,
-        optimizer=momentum
-    )
+    mlp = PerceptronMulticapa(capas, tita=tanh, tita_prime=tanh_prime, optimizer=momentum)
 
     epocas = 300
-    train_accs = []
-    test_accs = []
+    train_accs, test_accs = [], []
+    train_precs, test_precs = [], []
 
     for epoch in range(epocas):
         mlp.train(X_train, Y_train, epocas=1, tolerancia=0.001)
 
         pred_train = [mlp.forward(x)[-1] for x in X_train]
-        acc_train = calcular_accuracy(pred_train, Y_train)
+        acc_train, prec_train = calcular_metricas(pred_train, Y_train)
         train_accs.append(acc_train)
+        train_precs.append(prec_train)
 
         pred_test = [mlp.forward(x)[-1] for x in X_test]
-        acc_test = calcular_accuracy(pred_test, Y_test)
+        acc_test, prec_test = calcular_metricas(pred_test, Y_test)
         test_accs.append(acc_test)
+        test_precs.append(prec_test)
 
-        print(f"Epoch {epoch+1}/{epocas} - Train Acc: {acc_train:.4f} - Test Acc: {acc_test:.4f}")
+        print(f"Epoch {epoch+1:3} | Train Acc: {acc_train:.4f} Prec: {prec_train:.4f} | Test Acc: {acc_test:.4f} Prec: {prec_test:.4f}")
 
-    # Guardar en CSV
-    with open("accuracy_vs_epoch.csv", "w", newline="") as f:
+    with open("accuracy_precision_vs_epoch.csv", "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["epoch", "train_accuracy", "test_accuracy"])
+        writer.writerow(["epoch", "train_accuracy", "train_precision", "test_accuracy", "test_precision"])
         for i in range(epocas):
-            writer.writerow([i+1, train_accs[i], test_accs[i]])
+            writer.writerow([
+                i + 1,
+                train_accs[i],
+                train_precs[i],
+                test_accs[i],
+                test_precs[i]
+            ])
 
-    print("\n¡Entrenamiento completo! Accuracy por época guardado en 'accuracy_vs_epoch.csv'")
+    with open("resultados_test_3c.csv", "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Imagen", "Esperado", "Predicho", "Salidas"])
+        for i, (x, t) in enumerate(zip(X_test, Y_test)):
+            salida = mlp.forward(x)[-1]
+            predicho = np.argmax(salida)
+            esperado = np.argmax(t)
+            writer.writerow([i, esperado, predicho, ",".join(f"{s:.5f}" for s in salida)])
 
 
 if __name__ == "__main__":
