@@ -28,4 +28,4 @@ def calcular_metricas_multiclase(path_csv):
 
 if __name__ == "__main__":
     # Reemplazá el nombre por el CSV generado por ej3c.py
-    calcular_metricas_multiclase("resultados_test_YYYYMMDD_HHMMSS.csv")
+    calcular_metricas_multiclase("resultados_test_3c.csv")

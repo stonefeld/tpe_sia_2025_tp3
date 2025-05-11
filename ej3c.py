@@ -86,8 +86,7 @@ def main():
     correctos = 0
 
     # Crear archivo CSV con timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    csv_filename = f"resultados_test_{timestamp}.csv"
+    csv_filename = f"resultados_test_3c.csv"
     
     with open(csv_filename, 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
