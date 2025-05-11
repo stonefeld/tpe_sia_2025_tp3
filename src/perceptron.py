@@ -161,9 +161,9 @@ class PerceptronMulticapa:
 
         # Cálculo de gradientes
         for i in range(len(self.weights)):
-            entrada = np.concatenate(([1], activaciones[i]))
-            weight_gradient = np.outer(deltas[i], entrada)
-            self.optimizer.update(i, self.weights[i], weight_gradient)
+            entrada = np.append(1, activaciones[i])
+            weight_gradients = np.outer(deltas[i], entrada)
+            self.optimizer.update(i, self.weights[i], weight_gradients)
 
     def train(self, datos, salidas, epocas=1000, tolerancia=0.01):
         datos = np.array(datos)

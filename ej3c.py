@@ -5,8 +5,8 @@ import re
 import numpy as np
 from PIL import Image
 
+from src.optimizers import SGD, Adam, Momentum
 from src.perceptron import PerceptronMulticapa
-from src.optimizers import Momentum, Adam
 
 
 def tanh(h):
@@ -19,9 +19,8 @@ def tanh_prime(salida):
 
 def cargar_imagen_como_vector(path_imagen):
     with Image.open(path_imagen) as img:
-        img = img.convert("L")  # escala de grises
+        img = img.convert("L")
         pixeles = np.array(img.getdata())
-        # Convertimos a binario: 0 para oscuro, 1 para claro
         binarizado = np.where(pixeles < 128, 1, 0)
         return binarizado
 
@@ -31,11 +30,10 @@ def cargar_imagenes_y_etiquetas(carpeta):
     etiquetas = []
 
     archivos = [f for f in os.listdir(carpeta) if f.endswith(".png")]
-    archivos.sort()  # para que el orden sea estable
+    archivos.sort()
 
-    patron = re.compile(r"imagen_(\d+)_\w+\.png")  # coincide con imagen_3_1.png, imagen_7_b.png, etc.
+    patron = re.compile(r"imagen_(\d+)_\w+\.png")
 
-    # Find the range of numbers to determine output size
     min_numero = float("inf")
     max_numero = float("-inf")
     for archivo in archivos:
@@ -58,7 +56,7 @@ def cargar_imagenes_y_etiquetas(carpeta):
 
         numero = int(match.group(1))
         etiqueta = np.full(num_outputs, -1)
-        etiqueta[numero - min_numero] = 1  # Adjust index based on min_numero
+        etiqueta[numero - min_numero] = 1
 
         imagenes.append(vector)
         etiquetas.append(etiqueta)
@@ -67,19 +65,21 @@ def cargar_imagenes_y_etiquetas(carpeta):
 
 
 def main():
+    # TRAINING
     data, labels, num_outputs = cargar_imagenes_y_etiquetas("assets/training_set")
 
     input_size = len(data[0])
     layers = [input_size, 30, num_outputs]
 
-    momentum = Momentum(learning_rate=0.01, momentum=0.9)
+    sgd = SGD(learning_rate=0.01)
+    momentum = Momentum(learning_rate=0.001, momentum=0.8)
     adam = Adam(learning_rate=0.001, layers=layers)
-    mlp = PerceptronMulticapa(layers, tita=tanh, tita_prime=tanh_prime, optimizer=adam)
+    mlp = PerceptronMulticapa(layers, tita=tanh, tita_prime=tanh_prime, optimizer=momentum)
 
     print("Entrenando con múltiples imágenes por dígito...")
-    mlp.train(data, labels, epocas=10000, tolerancia=0.0001)
+    mlp.train(data, labels, epocas=1000, tolerancia=0.001)
 
-    # ahora cargamos de `assets/numeros_test` el archivo `imagen_8.png` y vemos qué predice
+    # TESTING
     test_data, test_labels, _ = cargar_imagenes_y_etiquetas("assets/testing_set")
     correctos = 0
 

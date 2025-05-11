@@ -9,7 +9,7 @@ class Optimizer(ABC):
         pass
 
     @abstractmethod
-    def update(self, weights, weight_gradient):
+    def update(self, weights, weight_gradients):
         pass
 
 
@@ -20,8 +20,8 @@ class SGD(Optimizer):
     def initialize(self, _):
         pass
 
-    def update(self, _, weights, weight_gradient):
-        weights += self.learning_rate * weight_gradient
+    def update(self, _, weights, weight_gradients):
+        weights += self.learning_rate * weight_gradients
 
 
 class Momentum(Optimizer):
@@ -31,10 +31,10 @@ class Momentum(Optimizer):
         self.velocity = None
 
     def initialize(self, weights):
-        self.velocity = [np.zeros_like(w) for w in weights]
+        self.velocity = [np.zeros_like(w, dtype=np.float64) for w in weights]
 
-    def update(self, i, weights, weight_gradient):
-        self.velocity[i] = self.momentum * self.velocity[i] + self.learning_rate * weight_gradient
+    def update(self, i, weights, weight_gradients):
+        self.velocity[i] = self.momentum * self.velocity[i] + self.learning_rate * weight_gradients
         weights += self.velocity[i]
 
 
@@ -57,19 +57,19 @@ class Adam(Optimizer):
             self.simple = True
 
     def initialize(self, weights):
-        self.m = [np.zeros_like(w) for w in weights]
-        self.v = [np.zeros_like(w) for w in weights]
+        self.m = [np.zeros_like(w, dtype=np.float64) for w in weights]
+        self.v = [np.zeros_like(w, dtype=np.float64) for w in weights]
 
-    def update(self, i, weights, weight_gradient):
+    def update(self, i, weights, weight_gradients):
         self.t += 1
 
         # Actualizar los momentos
-        self.m[i] = self.beta1 * self.m[i] + (1 - self.beta1) * weight_gradient
-        self.v[i] = self.beta2 * self.v[i] + (1 - self.beta2) * weight_gradient ** 2
+        self.m[i] = self.beta1 * self.m[i] + (1 - self.beta1) * weight_gradients
+        self.v[i] = self.beta2 * self.v[i] + (1 - self.beta2) * weight_gradients**2
 
         # Corrección de sesgo
-        m_hat = self.m[i] / (1 - self.beta1 ** self.t)
-        v_hat = self.v[i] / (1 - self.beta2 ** self.t)
+        m_hat = self.m[i] / (1 - self.beta1**self.t)
+        v_hat = self.v[i] / (1 - self.beta2**self.t)
 
         # Actualizar los pesos
         update = self.learning_rate * m_hat / (np.sqrt(v_hat) + self.epsilon)
