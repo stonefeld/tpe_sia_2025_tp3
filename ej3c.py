@@ -6,6 +6,7 @@ import numpy as np
 from PIL import Image
 
 from src.perceptron import PerceptronMulticapa
+from src.optimizers import Momentum, Adam
 
 
 def tanh(h):
@@ -69,7 +70,11 @@ def main():
     data, labels, num_outputs = cargar_imagenes_y_etiquetas("assets/training_set")
 
     input_size = len(data[0])
-    mlp = PerceptronMulticapa([input_size, 30, num_outputs], alpha=0.01, tita=tanh, tita_prime=tanh_prime)
+    layers = [input_size, 30, num_outputs]
+
+    momentum = Momentum(learning_rate=0.01, momentum=0.9)
+    adam = Adam(learning_rate=0.001, layers=layers)
+    mlp = PerceptronMulticapa(layers, tita=tanh, tita_prime=tanh_prime, optimizer=adam)
 
     print("Entrenando con múltiples imágenes por dígito...")
     mlp.train(data, labels, epocas=10000, tolerancia=0.0001)

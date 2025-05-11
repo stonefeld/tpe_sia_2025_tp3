@@ -1,5 +1,7 @@
 import numpy as np
 
+from src.optimizers import SGD
+
 
 class PerceptronSimple:
     def __init__(self, input_size, tita, learning_rate=0.05):
@@ -107,12 +109,12 @@ class PerceptronNoLineal:
 
 
 class PerceptronMulticapa:
-    def __init__(self, capas, tita, tita_prime, alpha=0.1):
+    def __init__(self, capas, tita, tita_prime, optimizer=SGD()):
         self.capas = capas  # lista de tamaños de capas [input, hidden1, ..., output]
-        self.alpha = alpha
         self.tita = tita
         self.tita_prime = tita_prime
         self.weights = []  # pesos[i] conecta capas[i] -> capas[i+1]
+        self.optimizer = optimizer
 
         # Inicialización Xavier/Glorot de los pesos
         for i in range(len(capas) - 1):
@@ -121,6 +123,9 @@ class PerceptronMulticapa:
             # Xavier/Glorot initialization: scale = sqrt(2.0 / (fan_in + fan_out))
             scale = np.sqrt(2.0 / (entradas + neuronas))
             self.weights.append(np.random.normal(0, scale, (neuronas, entradas)))
+
+        # Inicialización del optimizador
+        self.optimizer.initialize(self.weights)
 
     def forward(self, x):
         entrada = np.array(x)
@@ -150,14 +155,15 @@ class PerceptronMulticapa:
             siguiente_delta = deltas[j]
             siguiente_pesos = self.weights[j]
 
+            # Calcular el delta sin considerar el bias
             error_oculto = np.dot(siguiente_delta, siguiente_pesos[:, 1:])
             deltas[i] = error_oculto * np.array([self.tita_prime(s) for s in capa])
 
-        # Actualización de pesos
+        # Cálculo de gradientes
         for i in range(len(self.weights)):
             entrada = np.concatenate(([1], activaciones[i]))
-            for j in range(len(self.weights[i])):
-                self.weights[i][j] += self.alpha * deltas[i][j] * entrada
+            weight_gradient = np.outer(deltas[i], entrada)
+            self.optimizer.update(i, self.weights[i], weight_gradient)
 
     def train(self, datos, salidas, epocas=1000, tolerancia=0.01):
         datos = np.array(datos)
@@ -174,7 +180,7 @@ class PerceptronMulticapa:
 
             error_promedio = error_total / len(datos)
             if error_promedio < tolerancia:
-                print(f"Convergió en la época {epoca} con error {error_promedio}")
+                print(f"Convergió en la época {epoca + 1} con error {error_promedio}")
                 break
 
             print(f"Error promedio: {error_promedio}")
