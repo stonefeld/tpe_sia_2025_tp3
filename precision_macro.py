@@ -14,9 +14,9 @@ with open("accuracy_precision_vs_epoch.csv", newline="") as f:
 
 plt.plot(epochs, train_precision, label="Train Precision Macro")
 plt.plot(epochs, test_precision, label="Test Precision Macro")
-plt.xlabel("Época")
-plt.ylabel("Precisión Macro")
-plt.title("Precisión Macro por Época")
+plt.xlabel("epoch")
+plt.ylabel("Precision")
+plt.title("Precision Macro by epoch")
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
