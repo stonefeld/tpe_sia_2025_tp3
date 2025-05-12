@@ -32,7 +32,7 @@ def k_fold_cross_validation_nolineal(data, labels, k, tita, tita_prime, learning
 
         # Inicializar y entrenar perceptrón
         p = PerceptronNoLineal(input_size=len(x_train[0]), tita=tita, tita_prime=tita_prime, learning_rate=learning_rate)
-        p.train(x_train, y_train, epochs)
+        p.train(x_train, y_train, epochs, tolerance=1e-4)
 
         # Evaluar en test
         test_predictions = [p.predict(xi)[0] for xi in x_test]
@@ -68,10 +68,10 @@ def main():
     avg_error, fold_errors = k_fold_cross_validation_nolineal(
         x,
         y,
-        k=5,
+        k=7,
         tita=sigmoid,
         tita_prime=sigmoid_derivative,
-        learning_rate=5e-3,
+        learning_rate=1e-2,
         epochs=10000,
     )
 
@@ -79,6 +79,20 @@ def main():
     for i, err in enumerate(fold_errors):
         print(f"Fold {i+1}: Error promedio = {err:.4f}")
     print(f"Error promedio total (generalización): {avg_error:.4f}")
+
+    # Create bar plot
+    plt.figure(figsize=(10, 6))
+    folds = range(1, len(fold_errors) + 1)
+    plt.bar(folds, fold_errors, color='skyblue', alpha=0.7)
+    plt.axhline(y=avg_error, color='red', linestyle='--', label=f'Error promedio: {avg_error:.4f}')
+    
+    plt.xlabel('Fold')
+    plt.ylabel('Error')
+    plt.title('Error por Fold en Validación Cruzada')
+    plt.xticks(folds)
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.show()
 
 
 if __name__ == "__main__":

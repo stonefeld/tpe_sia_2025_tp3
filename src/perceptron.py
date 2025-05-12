@@ -83,7 +83,7 @@ class PerceptronNoLineal:
         h = np.dot(self.weights, data)
         return self.tita(h), self.tita_prime(h)
 
-    def train(self, data, labels, epochs=1000):
+    def train(self, data, labels, epochs=1000, tolerance=1e-3):
         timelapse = {"data": data.tolist(), "labels": labels.tolist(), "lapse": {}}
 
         for epoch in range(epochs):
@@ -102,7 +102,7 @@ class PerceptronNoLineal:
 
             total_error /= len(data)
 
-            if total_error < 1e-3:
+            if total_error < tolerance:
                 break
 
         return timelapse

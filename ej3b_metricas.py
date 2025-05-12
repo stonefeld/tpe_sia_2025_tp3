@@ -1,5 +1,7 @@
 import csv
+
 from PIL import Image, ImageDraw, ImageFont
+
 
 def calcular_metricas_binarias(path_csv):
     TP = TN = FP = FN = 0
@@ -26,14 +28,6 @@ def calcular_metricas_binarias(path_csv):
     tasa_tp = TP / (TP + FN) if TP + FN > 0 else 0
     tasa_fp = FP / (FP + TN) if FP + TN > 0 else 0
 
-    print("Matriz de Confusión:")
-    print("           Predicho")
-    print("         | -1 |  1 ")
-    print("  -------+-----------")
-    print(f"  Real -1 | {TN:3} | {FP:3}")
-    print(f"  Real  1 | {FN:3} | {TP:3}")
-
-    print()
     print(f"Accuracy: {accuracy:.4f}")
     print(f"Precision: {precision:.4f}")
     print(f"Recall: {recall:.4f}")

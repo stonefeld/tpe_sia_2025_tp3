@@ -5,7 +5,7 @@ epochs = []
 train = []
 test = []
 
-with open("accuracy_vs_epoch.csv") as f:
+with open("accuracy_precision_vs_epoch.csv") as f:
     reader = csv.DictReader(f)
     for row in reader:
         epochs.append(int(row["epoch"]))
