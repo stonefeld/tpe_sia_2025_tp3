@@ -168,6 +168,7 @@ class PerceptronMulticapa:
     def train(self, datos, salidas, epocas=1000, tolerancia=0.01):
         datos = np.array(datos)
         salidas = np.array(salidas)
+        results = {"errors": []}
 
         for epoca in range(epocas):
             print(f"Época {epoca + 1}/{epocas}...", end=" ")
@@ -179,11 +180,14 @@ class PerceptronMulticapa:
                 error_total += np.sum((y - activaciones[-1]) ** 2) / (2 * y.size)
 
             error_promedio = error_total / len(datos)
+            results["errors"].append(error_promedio)
             if error_promedio < tolerancia:
                 print(f"Convergió en la época {epoca + 1} con error {error_promedio}")
                 break
 
             print(f"Error promedio: {error_promedio}")
+
+        return results
 
     def predict(self, x: list[float]) -> list[float]:
         return self.forward(x)[-1]
