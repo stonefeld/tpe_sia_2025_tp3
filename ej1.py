@@ -28,14 +28,13 @@ def plot_timelapse(timelapse: dict, filename: str):
         epoch = epochs[epoch_idx]
         weights = lapse[epoch]["weights"]
 
-        # Plot points
         for xi, yi in zip(data, labels):
-            ax.plot(xi[1], xi[2], "rx" if yi == 1 else "bo")  # Red for +1
+            ax.plot(xi[1], xi[2], "rx" if yi == 1 else "bo")
 
         x_vals = [-2, 2]
         if weights[2] != 0:
             y_vals = [-(weights[1] * x + weights[0]) / weights[2] for x in x_vals]
-            ax.plot(x_vals, y_vals, "k-")  # Black line
+            ax.plot(x_vals, y_vals, "k-")
 
         ax.set_xlim(-2, 2)
         ax.set_ylim(-2, 2)

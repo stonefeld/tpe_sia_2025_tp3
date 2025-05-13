@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw, ImageFont
 def calcular_metricas_binarias(path_csv):
     TP = TN = FP = FN = 0
 
-    with open(path_csv, newline='') as csvfile:
+    with open(path_csv, newline="") as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             esperado = int(row["Esperado"])

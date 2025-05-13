@@ -56,7 +56,7 @@ class PerceptronLineal:
                 delta = yi - y_hat
                 xb = np.concatenate(([1], xi))
                 self.weights += self.learning_rate * delta * xb
-                total_error += 0.5 * (delta**2)  # Mean squared error
+                total_error += 0.5 * (delta**2)
 
             timelapse["lapse"][epoch] = {
                 "weights": self.weights.tolist(),
@@ -93,7 +93,7 @@ class PerceptronNoLineal:
                 delta = yi - y_hat
                 xb = np.concatenate(([1], xi))
                 self.weights += self.learning_rate * delta * y_hat_prime * xb
-                total_error += 0.5 * (delta**2)  # Mean squared error
+                total_error += 0.5 * (delta**2)
 
             timelapse["lapse"][epoch] = {
                 "weights": self.weights.tolist(),
@@ -120,11 +120,9 @@ class PerceptronMulticapa:
         for i in range(len(capas) - 1):
             neuronas = capas[i + 1]
             entradas = capas[i] + 1  # +1 por bias
-            # Xavier/Glorot initialization: scale = sqrt(2.0 / (fan_in + fan_out))
             scale = np.sqrt(2.0 / (entradas + neuronas))
             self.weights.append(np.random.normal(0, scale, (neuronas, entradas)))
 
-        # Inicialización del optimizador
         self.optimizer.initialize(self.weights)
 
     def forward(self, x):
@@ -159,7 +157,6 @@ class PerceptronMulticapa:
             error_oculto = np.dot(siguiente_delta, siguiente_pesos[:, 1:])
             deltas[i] = error_oculto * np.array([self.tita_prime(s) for s in capa])
 
-        # Cálculo de gradientes
         for i in range(len(self.weights)):
             entrada = np.append(1, activaciones[i])
             weight_gradients = np.outer(deltas[i], entrada)

@@ -63,7 +63,6 @@ def k_fold_cross_validation(data, labels, k=10, epocas=300):
         iter_preds = []
 
         for _ in range(20):
-            # Separar datos
             left = fold * fold_size
             right = (fold + 1) * fold_size
             test_data = combined[left:right]
@@ -77,13 +76,9 @@ def k_fold_cross_validation(data, labels, k=10, epocas=300):
             x_test = np.array(x_test)
             y_test = np.array(y_test)
 
-            # Inicializar y entrenar perceptrón
             mlp = PerceptronMulticapa(capas=[data.shape[1], 10, 1], tita=tanh, tita_prime=tanh_prime)
-
-            # Entrenar y evaluar
             mlp.train(x_train, y_train, epocas=epocas, tolerancia=0)
 
-            # Evaluar en test
             test_preds = [mlp.predict(x)[0] for x in x_test]
             iter_preds.append(np.mean(test_preds))
             fold_error = np.mean([abs(x - xt) for x, xt in zip(test_preds, y_test)])
@@ -146,6 +141,7 @@ def main():
 
     plot_predictions(fold_preds, "predictions_vs_fold.png")
     plot_errors(fold_errors, "errors_vs_fold.png")
+
 
 if __name__ == "__main__":
     main()

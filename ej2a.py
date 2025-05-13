@@ -33,7 +33,9 @@ def plot_errors(lineal_errors, nolineal_errors):
     fig, ax = plt.subplots(figsize=(10, 5))
 
     ax.errorbar(lineal_labels, lineal_avg_errors, yerr=lineal_std_errors, marker="o", linestyle="-", color="purple", label="Lineal")
-    ax.errorbar(nolineal_labels, nolineal_avg_errors, yerr=nolineal_std_errors, marker="o", linestyle="-", color="orange", label="No Lineal")
+    ax.errorbar(
+        nolineal_labels, nolineal_avg_errors, yerr=nolineal_std_errors, marker="o", linestyle="-", color="orange", label="No Lineal"
+    )
     ax.plot(min_lineal[0], min_lineal[1]["average"], marker="*", color="red", markersize=15)
     ax.plot(min_nolineal[0], min_nolineal[1]["average"], marker="*", color="red", markersize=15)
 

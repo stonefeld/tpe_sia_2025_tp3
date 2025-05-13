@@ -7,6 +7,7 @@ import numpy as np
 from ej2b import sigmoid, sigmoid_derivative
 from src.perceptron import PerceptronNoLineal
 
+
 def k_fold_cross_validation_nolineal(data, labels, k, tita, tita_prime, learning_rate=0.01, epochs=1000):
     combined = list(zip(data, labels))
     random.shuffle(combined)
@@ -16,7 +17,6 @@ def k_fold_cross_validation_nolineal(data, labels, k, tita, tita_prime, learning
     test_errors = []
 
     for fold in range(k):
-        # Separar datos
         left = fold * fold_size
         right = (fold + 1) * fold_size
         test_data = combined[left:right]
@@ -30,25 +30,22 @@ def k_fold_cross_validation_nolineal(data, labels, k, tita, tita_prime, learning
         x_test = np.array(x_test)
         y_test = np.array(y_test)
 
-        # Inicializar y entrenar perceptrón
         p = PerceptronNoLineal(input_size=len(x_train[0]), tita=tita, tita_prime=tita_prime, learning_rate=learning_rate)
         results = p.train(x_train, y_train, epochs, tolerance=1e-3)
-        
-        # Obtener error de entrenamiento del último epoch
+
         train_predictions = [p.predict(xi)[0] for xi in x_train]
         train_error = np.mean(np.abs(np.array(y_train) - np.array(train_predictions)))
-        
-        # Evaluar en test
+
         test_predictions = [p.predict(xi)[0] for xi in x_test]
         test_error = np.mean(np.abs(np.array(y_test) - np.array(test_predictions)))
-        
+
         train_errors.append(train_error)
         test_errors.append(test_error)
 
     return train_errors, test_errors
 
+
 def main():
-    # Cargar conjunto
     conjunto = np.loadtxt("assets/conjunto.csv", delimiter=",", skiprows=1)
     x = conjunto[:, :-1]
     y = conjunto[:, -1]
@@ -60,14 +57,12 @@ def main():
 
     # Valores de K a probar
     ks = [2, 4, 7, 14, 28]
-    
-    # Crear una figura con un solo subplot
+
     fig, ax = plt.subplots(1, 1, figsize=(10, 5))
 
-    # Preparar datos para el gráfico
     x_pos = np.arange(len(ks))
-    width = 0.35  # ancho de las barras
-    
+    width = 0.35
+
     train_errors = []
     test_errors = []
 
@@ -85,28 +80,26 @@ def main():
         train_errors.append(np.mean(train_error))
         test_errors.append(np.mean(test_error))
 
-    # Crear las barras
-    ax.bar(x_pos - width/2, train_errors, width, label='Entrenamiento', color='orange')
-    ax.bar(x_pos + width/2, test_errors, width, label='Testeo', color='blue')
+    ax.bar(x_pos - width / 2, train_errors, width, label="Entrenamiento", color="orange")
+    ax.bar(x_pos + width / 2, test_errors, width, label="Testeo", color="blue")
 
-    # Personalizar el gráfico
-    ax.set_ylabel('Error promedio')
-    ax.set_xlabel('Valor de k')
-    ax.set_title('Comparación de errores de entrenamiento y testeo')
+    ax.set_ylabel("Error promedio")
+    ax.set_xlabel("Valor de k")
+    ax.set_title("Comparación de errores de entrenamiento y testeo")
     ax.set_xticks(x_pos)
     ax.set_xticklabels(ks)
     ax.legend()
 
-    # Añadir los valores sobre las barras
     for i, v in enumerate(train_errors):
-        ax.text(i - width/2, v, f'{v:.4f}', ha='center', va='bottom')
+        ax.text(i - width / 2, v, f"{v:.4f}", ha="center", va="bottom")
     for i, v in enumerate(test_errors):
-        ax.text(i + width/2, v, f'{v:.4f}', ha='center', va='bottom')
+        ax.text(i + width / 2, v, f"{v:.4f}", ha="center", va="bottom")
 
     plt.tight_layout()
-    plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+    plt.grid(True, axis="y", linestyle="--", alpha=0.7)
     plt.savefig("grafico_error_vs_k_ej2b.png")
     plt.show()
+
 
 if __name__ == "__main__":
     main()

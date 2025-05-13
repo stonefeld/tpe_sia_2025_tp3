@@ -16,7 +16,6 @@ def k_fold_cross_validation_nolineal(data, labels, k, tita, tita_prime, learning
     fold_errors = []
 
     for fold in range(k):
-        # Separar datos
         left = fold * fold_size
         right = (fold + 1) * fold_size
         test_data = combined[left:right]
@@ -30,11 +29,9 @@ def k_fold_cross_validation_nolineal(data, labels, k, tita, tita_prime, learning
         x_test = np.array(x_test)
         y_test = np.array(y_test)
 
-        # Inicializar y entrenar perceptrón
         p = PerceptronNoLineal(input_size=len(x_train[0]), tita=tita, tita_prime=tita_prime, learning_rate=learning_rate)
         p.train(x_train, y_train, epochs, tolerance=1e-4)
 
-        # Evaluar en test
         test_predictions = [p.predict(xi)[0] for xi in x_test]
         fold_error = np.mean(np.abs(np.array(y_test) - np.array(test_predictions)))
         fold_errors.append(fold_error)
@@ -80,15 +77,14 @@ def main():
         print(f"Fold {i+1}: Error promedio = {err:.4f}")
     print(f"Error promedio total (generalización): {avg_error:.4f}")
 
-    # Create bar plot
     plt.figure(figsize=(10, 6))
     folds = range(1, len(fold_errors) + 1)
-    plt.bar(folds, fold_errors, color='skyblue', alpha=0.7)
-    plt.axhline(y=avg_error, color='red', linestyle='--', label=f'Error promedio: {avg_error:.4f}')
-    
-    plt.xlabel('Fold')
-    plt.ylabel('Error')
-    plt.title('Error por Fold en Validación Cruzada')
+    plt.bar(folds, fold_errors, color="skyblue", alpha=0.7)
+    plt.axhline(y=avg_error, color="red", linestyle="--", label=f"Error promedio: {avg_error:.4f}")
+
+    plt.xlabel("Fold")
+    plt.ylabel("Error")
+    plt.title("Error por Fold en Validación Cruzada")
     plt.xticks(folds)
     plt.legend()
     plt.grid(True, alpha=0.3)

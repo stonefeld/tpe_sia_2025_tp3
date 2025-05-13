@@ -2,6 +2,7 @@ import math
 import os
 import re
 
+import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
@@ -51,7 +52,6 @@ def cargar_imagenes_y_etiquetas(carpeta):
 
         match = patron.match(archivo)
         if not match:
-            print(f"Archivo ignorado por formato no válido: {archivo}")
             continue
 
         numero = int(match.group(1))
@@ -64,40 +64,39 @@ def cargar_imagenes_y_etiquetas(carpeta):
     return np.array(imagenes), np.array(etiquetas), num_outputs
 
 
-def main():
-    # TRAINING
-    data, labels, num_outputs = cargar_imagenes_y_etiquetas("assets/training_set")
+def plot_errors(errors, filename):
+    plt.figure(figsize=(10, 6))
 
-    input_size = len(data[0])
-    layers = [input_size, 30, num_outputs]
+    for optimizer, error in errors.items():
+        plt.plot(error, label=optimizer, linewidth=2)
+
+    plt.xlabel("Época")
+    plt.ylabel("Error")
+    plt.title("Error de entrenamiento por época")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(filename)
+
+
+def main():
+    X_train, Y_train, num_outputs = cargar_imagenes_y_etiquetas("assets/training_set")
+
+    input_size = len(X_train[0])
+    capas = [input_size, 30, num_outputs]
 
     sgd = SGD(learning_rate=0.01)
     momentum = Momentum(learning_rate=0.001, momentum=0.8)
-    adam = Adam(learning_rate=0.001, layers=layers)
-    mlp = PerceptronMulticapa(layers, tita=tanh, tita_prime=tanh_prime, optimizer=sgd)
+    adam = Adam(learning_rate=0.001, layers=capas)
+    optimizers = [sgd, momentum, adam]
 
-    print("Entrenando con múltiples imágenes por dígito...")
-    mlp.train(data, labels, epocas=1000, tolerancia=0.001)
+    train_errors = {}
 
-    # TESTING
-    test_data, test_labels, _ = cargar_imagenes_y_etiquetas("assets/testing_set")
-    correctos = 0
+    for optimizer in optimizers:
+        mlp = PerceptronMulticapa(capas, tita=tanh, tita_prime=tanh_prime, optimizer=optimizer)
+        results = mlp.train(X_train, Y_train, epocas=1000, tolerancia=0.001)
+        train_errors[optimizer.__class__.__name__] = results["errors"]
 
-    print("\nResultados sobre el conjunto de test:")
-    for i, x in enumerate(test_data):
-        salida = mlp.forward(x)[-1]
-        predicho = np.argmax(salida)
-        esperado = np.argmax(test_labels[i])
-        print(f"Imagen {i}: Esperado: {esperado}, Predicho: {predicho}", end="")
-        if predicho == esperado:
-            correctos += 1
-            print(" ✅")
-        else:
-            print(" ❌")
-        print(f"\tSalida: [{', '.join(f'{s:8.5f}' for s in salida)}]")
-
-    print(f"\nTotal de imágenes correctas: {correctos}/{len(test_data)}")
-    print(f"Porcentaje de aciertos: {correctos/len(test_data)*100:.2f}%")
+    plot_errors(train_errors, "train_errors.png")
 
 
 if __name__ == "__main__":

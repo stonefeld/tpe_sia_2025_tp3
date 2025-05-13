@@ -1,10 +1,11 @@
+import csv
 import math
 import os
 import re
-import csv
+
+import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
-import matplotlib.pyplot as plt
 
 from src.optimizers import SGD, Adam, Momentum
 from src.perceptron import PerceptronMulticapa
@@ -100,7 +101,7 @@ def plot_learning_rate_errors(optimizer_errors):
         std_errors = [x["std"] for x in errors.values()]
 
         min_error = min(errors.items(), key=lambda x: x[1]["average"])
-        
+
         ax.errorbar(learning_rates, avg_errors, yerr=std_errors, marker="o", linestyle="-", label=optimizer_name)
         ax.plot(min_error[0], min_error[1]["average"], marker="*", color="red", markersize=15)
 
@@ -145,20 +146,15 @@ def main():
     repeats = 1
     epocas = 300
 
-    optimizer_errors = {
-        "SGD": {},
-        "Momentum": {},
-        "Adam": {}
-    }
+    optimizer_errors = {"SGD": {}, "Momentum": {}, "Adam": {}}
 
     best_learning_rates = {}
     best_mlps = {}
 
-    # Test different learning rates for each optimizer
     for lr in learning_rates:
         for optimizer_name in optimizer_errors.keys():
             optimizer_errors[optimizer_name][lr] = {"errors": [], "std": 0, "average": 0}
-            
+
             for _ in range(repeats):
                 if optimizer_name == "SGD":
                     optimizer = SGD(learning_rate=lr)
@@ -174,15 +170,12 @@ def main():
             optimizer_errors[optimizer_name][lr]["std"] = np.std(optimizer_errors[optimizer_name][lr]["errors"])
             optimizer_errors[optimizer_name][lr]["average"] = np.mean(optimizer_errors[optimizer_name][lr]["errors"])
 
-    # Plot learning rate errors
     plot_learning_rate_errors(optimizer_errors)
 
-    # Find best learning rate for each optimizer
     for optimizer_name in optimizer_errors.keys():
         best_lr = min(optimizer_errors[optimizer_name].items(), key=lambda x: x[1]["average"])[0]
         best_learning_rates[optimizer_name] = best_lr
 
-        # Train final model with best learning rate
         if optimizer_name == "SGD":
             optimizer = SGD(learning_rate=best_lr)
         elif optimizer_name == "Momentum":
@@ -194,7 +187,6 @@ def main():
         results = mlp.train(X_train, Y_train, epocas=epocas, tolerancia=0.001)
         best_mlps[optimizer_name] = mlp
 
-        # Save results to CSV
         with open(f"resultados_test_{optimizer_name.lower()}.csv", "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["Imagen", "Esperado", "Predicho", "Salidas"])
@@ -204,10 +196,9 @@ def main():
                 esperado = np.argmax(t)
                 writer.writerow([i, esperado, predicho, ",".join(f"{s:.5f}" for s in salida)])
 
-        # Calculate and print metrics
         pred_train = [mlp.forward(x)[-1] for x in X_train]
         acc_train, prec_train = calcular_metricas(pred_train, Y_train)
-        
+
         pred_test = [mlp.forward(x)[-1] for x in X_test]
         acc_test, prec_test = calcular_metricas(pred_test, Y_test)
 
@@ -215,19 +206,12 @@ def main():
         print(f"Train - Accuracy: {acc_train:.4f}, Precision: {prec_train:.4f}")
         print(f"Test  - Accuracy: {acc_test:.4f}, Precision: {prec_test:.4f}")
 
-        # Save metrics to CSV
         with open(f"accuracy_precision_{optimizer_name.lower()}.csv", "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["epoch", "train_accuracy", "train_precision", "test_accuracy", "test_precision"])
             for i in range(epocas):
-                writer.writerow([
-                    i + 1,
-                    acc_train,
-                    prec_train,
-                    acc_test,
-                    prec_test
-                ])
+                writer.writerow([i + 1, acc_train, prec_train, acc_test, prec_test])
 
 
 if __name__ == "__main__":
-    main() 
+    main()
